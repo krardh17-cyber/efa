@@ -106,7 +106,6 @@ import asyncio
 import os
 import datetime as dt
 import base64
-import events
 import platform
 from telethon import version as telethon_version
 from telethon import events
