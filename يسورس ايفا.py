@@ -7747,22 +7747,28 @@ async def delete_muted_user_messages(event):
         await client.delete_messages(event.chat_id, [event.id])
     
 
-async def main():
-    await client.start()
-    await update_username()
 
-# ---- أضف هذا قبل with client: مباشرة ----
-# --- تشغيل العميل والحدث الرئيسي ---
+# --- تشغيل البوت ---
 async def start_bot():
+    # 1. الاتصال أولاً
     await client.start()
-    # إضافة handler للمنشن بعد الاتصال
+    print("✅ تم الاتصال بالحساب")
+    
+    # 2. إضافة handler للمنشن (بعد الاتصال)
     me = await client.get_me()
-    client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
+    if me.username:
+        client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
+        print(f"✅ تم إعداد معالج المنشن لـ @{me.username}")
+    
+    # 3. الانضمام للقنوات
     await join_channels()
-    print("✅ البوت يعمل الآن...")
-    # تشغيل تحديث الاسم إذا كان موجوداً
+    
+    # 4. تشغيل المهام الأخرى
     if 'update_username' in globals():
         asyncio.create_task(update_username())
+    
+    print("✅ البوت يعمل الآن...")
 
+# تشغيل كل شيء
 with client:
     client.loop.run_until_complete(start_bot())
