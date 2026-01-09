@@ -658,13 +658,13 @@ async def respond_to_greeting(event):
                 except Exception as e:
                     await event.reply(f"حدث خطأ: {str(e)}")
                 break
-"""
+
 async def respond_to_mention(event):
     if event.is_private and not (await event.get_sender()).bot:  
         sender = await event.get_sender()
         await event.reply(f"انتظر يجي المطور @{sender.username} ويرد على رسالتك لا تبقه تمنشنه هواي")
-client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
-"""
+#client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
+
 def superscript_time(time_str):
     superscript_digits = str.maketrans('0123456789', '𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟭𝟴𝟵')
     return time_str.translate(superscript_digits)
