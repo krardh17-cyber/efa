@@ -662,7 +662,7 @@ async def respond_to_mention(event):
     if event.is_private and not (await event.get_sender()).bot:  
         sender = await event.get_sender()
         await event.reply(f"انتظر يجي المطور @{sender.username} ويرد على رسالتك لا تبقه تمنشنه هواي")
-client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
+#client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
 
 def superscript_time(time_str):
     superscript_digits = str.maketrans('0123456789', '𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟭𝟴𝟵')
@@ -7751,6 +7751,25 @@ async def main():
     await client.start()
     await update_username()
 
+# ---- أضف هذا قبل with client: مباشرة ----
+
+async def setup_handlers():
+    await client.start()
+    # الآن العميل متصل، يمكن استخدام get_me()
+    me = await client.get_me()
+    # إضافة event handler للمنشن
+    client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
+
+# ---- نهاية الإضافة ----
+
+# --- تشغيل العميل والحدث الرئيسي ---
+# استبدل هذا:
+# with client:
+#     client.loop.run_until_complete(main())
+
+# بهذا:
 with client:
+    # أولاً: إعداد المعالجات بعد الاتصال
+    client.loop.run_until_complete(setup_handlers())
+    # ثانياً: تشغيل الدالة الرئيسية
     client.loop.run_until_complete(main())
-    
