@@ -8,7 +8,7 @@ pkg install python -y
 pkg install git -y
 
 # استنساخ المستودع
-git clone https://github.com/eeeterii/git-init.git
+git clone https://github.com/krardh17-cyber/git-init.git
 cd git-init
 
 # تشغيل المشروع (حدد ملف التشغيل الصحيح)
