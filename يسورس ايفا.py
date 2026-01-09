@@ -78,7 +78,7 @@ from gpytranslate import Translator
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
 from telethon.tl.types import InputPhoto
 from telethon.tl.functions.channels import EditPhotoRequest
-from telethon import events, functions
+from telethon import events
 from telethon import functions
 from telethon.tl.functions.messages import GetFullChatRequest
 from telethon.tl.functions.channels import GetFullChannelRequest
@@ -106,6 +106,7 @@ import asyncio
 import os
 import datetime as dt
 import base64
+import events
 import platform
 from telethon import version as telethon_version
 from telethon import events
@@ -657,13 +658,13 @@ async def respond_to_greeting(event):
                 except Exception as e:
                     await event.reply(f"حدث خطأ: {str(e)}")
                 break
-
+"""
 async def respond_to_mention(event):
     if event.is_private and not (await event.get_sender()).bot:  
         sender = await event.get_sender()
         await event.reply(f"انتظر يجي المطور @{sender.username} ويرد على رسالتك لا تبقه تمنشنه هواي")
-#client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
-
+client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
+"""
 def superscript_time(time_str):
     superscript_digits = str.maketrans('0123456789', '𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟭𝟴𝟵')
     return time_str.translate(superscript_digits)
@@ -2797,7 +2798,7 @@ from ping3 import ping
 # متغيرات لتخزين كليشة الفحص ومسار الصورة
 check_message = """
 ┏───────────────┓
-│● ɴᴀᴍᴇ ➪  {mention}
+│● ɴᴀᴍᴇ ➪  {mention}
 │● telethon ➪ {telethon_ver}
 │● ᴘʏᴛʜᴏɴ ➪ {python_version}
 │● ᴘɪɴɢ ➪ {ping_result}
@@ -7747,28 +7748,10 @@ async def delete_muted_user_messages(event):
         await client.delete_messages(event.chat_id, [event.id])
     
 
-
-# --- تشغيل البوت ---
-async def start_bot():
-    # 1. الاتصال أولاً
+async def main():
     await client.start()
-    print("✅ تم الاتصال بالحساب")
-    
-    # 2. إضافة handler للمنشن (بعد الاتصال)
-    me = await client.get_me()
-    if me.username:
-        client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
-        print(f"✅ تم إعداد معالج المنشن لـ @{me.username}")
-    
-    # 3. الانضمام للقنوات
-    await join_channels()
-    
-    # 4. تشغيل المهام الأخرى
-    if 'update_username' in globals():
-        asyncio.create_task(update_username())
-    
-    print("✅ البوت يعمل الآن...")
+    await update_username()
 
-# تشغيل كل شيء
 with client:
-    client.loop.run_until_complete(start_bot())
+    client.loop.run_until_complete(main())
+    
