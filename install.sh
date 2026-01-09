@@ -9,7 +9,7 @@ pkg install git -y
 
 # استنساخ المستودع
 git clone https://github.com/krardh17-cyber/efa.git
-cd git-init
+cd efa
 
 # تشغيل المشروع (حدد ملف التشغيل الصحيح)
 python 'يسورس ايفا.py'
