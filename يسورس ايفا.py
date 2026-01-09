@@ -78,7 +78,7 @@ from gpytranslate import Translator
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
 from telethon.tl.types import InputPhoto
 from telethon.tl.functions.channels import EditPhotoRequest
-from telethon import events
+from telethon import events, functions
 from telethon import functions
 from telethon.tl.functions.messages import GetFullChatRequest
 from telethon.tl.functions.channels import GetFullChannelRequest
