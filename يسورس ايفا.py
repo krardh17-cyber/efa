@@ -7752,24 +7752,17 @@ async def main():
     await update_username()
 
 # ---- أضف هذا قبل with client: مباشرة ----
-
-async def setup_handlers():
-    await client.start()
-    # الآن العميل متصل، يمكن استخدام get_me()
-    me = await client.get_me()
-    # إضافة event handler للمنشن
-    client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
-
-# ---- نهاية الإضافة ----
-
 # --- تشغيل العميل والحدث الرئيسي ---
-# استبدل هذا:
-# with client:
-#     client.loop.run_until_complete(main())
+async def start_bot():
+    await client.start()
+    # إضافة handler للمنشن بعد الاتصال
+    me = await client.get_me()
+    client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{me.username}'))
+    await join_channels()
+    print("✅ البوت يعمل الآن...")
+    # تشغيل تحديث الاسم إذا كان موجوداً
+    if 'update_username' in globals():
+        asyncio.create_task(update_username())
 
-# بهذا:
 with client:
-    # أولاً: إعداد المعالجات بعد الاتصال
-    client.loop.run_until_complete(setup_handlers())
-    # ثانياً: تشغيل الدالة الرئيسية
-    client.loop.run_until_complete(main())
+    client.loop.run_until_complete(start_bot())
