@@ -1,3 +1,6 @@
+import os
+os.system("pip install mention")
+
 from telethon.tl.functions.account import UpdateProfileRequest
 from telethon.errors.rpcerrorlist import MessageNotModifiedError, FloodWaitError
 from telethon.tl.types import ChannelParticipantCreator, ChannelParticipantAdmin
@@ -38,8 +41,6 @@ from telethon import types
 from telethon.tl import functions
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
-from telethon import events, functions
-from telethon.tl.types import Message
 from telethon.tl.functions.messages import DeleteHistoryRequest
 from telethon.events import NewMessage
 from telethon import events 
@@ -50,9 +51,6 @@ from telethon.tl.types import MessageMediaPhoto
 from telethon.tl.types import MessageMediaDocument
 from telethon import events, functions, utils
 from telethon.tl import functions, types
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telethon.tl.types import MessageEntityMentionName
-from telethon.errors import ChatAdminRequiredError
 from telethon.tl.types import InputChannel
 from deep_translator import GoogleTranslator
 from telethon import TelegramClient, events
@@ -73,7 +71,6 @@ from telethon import TelegramClient, events
 from telethon import TelegramClient, events, sync 
 from telethon.sessions import StringSession
 from telethon.errors import SessionPasswordNeededError
-from sqlalchemy.ext.declarative import declarative_base
 from gpytranslate import Translator
 from telethon.tl.functions.photos import UploadProfilePhotoRequest, DeletePhotosRequest
 from telethon.tl.types import InputPhoto
@@ -92,7 +89,6 @@ from asyncio import sleep
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
 from telethon.tl.types import Channel, Chat
-from dateutil import tz
 from emoji import emojize
 from datetime import datetime
 from telethon.tl.custom import Button
@@ -127,70 +123,98 @@ import telethon
 import logging
 import shutil
 import time
-import os
-import pickle
-import asyncio
-from telethon import TelegramClient, events
-from telethon.sessions import StringSession
-from telethon.tl.functions.channels import JoinChannelRequest
 
-# --- إعدادات الجلسة ---
-api_id = '26107707'
-api_hash = 'e3774389da1ff2e49f3cfb38c2105c87'
-session_str = input("أدخل الجلسة (String Session): ")
-client = TelegramClient(StringSession(session_str), api_id, api_hash)
+from telethon.sync import TelegramClient
+os.system("clear")
+print("""\033[031m
+⠀⠀⠀⠠⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⣤⠤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢈⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢠⣴⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠿⣿⣷⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢀⣴⣿⡷⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣾⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⣿⣿⣿⣧⠀⠀⠀⠘⣦⡀⠀⠀⠀⠀⠀⠀⠀⢀⣴⡇⠀⠀⠀⢀⣼⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠹⣿⣿⣿⣷⣦⣄⡀⣿⣱⡀⠀⠀⠀⠀⠀⠀⢸⢿⣧⣠⣴⣾⣿⣿⣿⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠈⠛⢷⣿⣟⡿⠿⠿⡟⣓⣒⣛⡛⡛⢟⣛⡛⠟⠿⣻⢿⣿⣻⡿⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⢠⣴⢻⡭⠖⡉⠥⣈⠀⣐⠂⡄⠔⢂⢦⡹⢬⡕⠊⠳⠈⢿⣳⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢀⣼⣷⣋⠲⢮⣁⠀⣐⠆⡤⢊⣜⡀⡾⣀⠀⢠⢻⣌⣤⣥⣓⣌⢻⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢰⣟⣽⢳⣯⣝⣦⡀⠓⡤⢆⠇⠂⠄⠤⡝⣂⠋⠖⢋⠀⣡⣶⣾⡿⡷⣽⡿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⢸⣿⡜⢯⣿⣿⣿⣷⣿⣤⣧⣶⣬⣝⣃⣓⣈⣥⣶⣿⣾⣿⣿⢣⠇⢻⡞⣯⣹⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢻⣼⣯⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⡔⡯⢧⢟⣟⣱⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⣿⣿⣿⣿⣿⣿𝗘𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘⣿⣿⣿⣿⣿⡟⡼⡼⢁⡌⢼⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣿⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⢇⡼⢃⡿⣼⣛⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⣧⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣯⠟⣡⣫⣢⢏⣼⡵⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⢸⣿⣏⢿⣿⣿⣿⣿⣿⣿⣿⡿⢿⣿⡾⢕⣻⣽⣵⠿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠘⢷⣮⣿⡼⢭⡟⠳⠞⡖⢛⣶⣷⣯⡶⠟⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠉⠛⠛⠛⠿⠟⠛⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+𝐃𝐞𝐯: @e_v_ae
+""")
 
-# --- مسارات الملفات ---
-response_file = 'responses.pkl'
-published_messages_file = 'published_messages.pkl'
-muted_users_file = 'muted_users.pkl'
-time_update_status_file = 'time_update_status.pkl'
-channel_link_file = 'channel_link.pkl'
-image_folder = 'image'
-last_message_time_file = 'last_message_time.pkl'
-last_message_id_file = 'last_message_id.pkl'
+api_id = '21681934'
+api_hash = 'bc11cc1cdec262af2ca26bc16358c47e'
+session_string = input("1BJWap1wBuz-fop675NoA1bnfdGCm9swXTwMT2Oluf2V4eeD1gPa8k4aF2nEdo_cyCXc1PwWwiIa92wOklVZf1u6WhvR0ChMnbRsRekTyvvWzK9dV0xOqVrkf2Hfc-43RJlDrNzii71cvOU0DVJYI9b6YB6YvU0VAiKrEg9ABTn6oNGpq7ZbVKR41fHW9iuQl53bm4LlIXT2oYXfXEZ6aq1XKKC9RkvKNHHWck1tbYvK3FoHUBYAEY7-IXp7HsBe1XSrBFEAg04WwT3KJN2OVmDoVBfHUYJwobOL33Q9bP3kJ4M0yVFa7SVRr1Ns2ryYo_UVrf2bKm4FUqqQRkvAf-ohZlyfWvBY=")
 
-# --- إنشاء مجلد الصور إن لم يكن موجوداً ---
-if not os.path.exists(image_folder):
-    os.makedirs(image_folder)
-
-# --- تحميل البيانات من الملفات إن وُجدت ---
-def load_data(file, default):
-    if os.path.exists(file):
-        with open(file, 'rb') as f:
-            return pickle.load(f)
-    return default
-
-responses = load_data(response_file, {})
-published_messages = load_data(published_messages_file, [])
-muted_users = load_data(muted_users_file, {})
-time_update_status = load_data(time_update_status_file, {'enabled': False})
-channel_link = load_data(channel_link_file, None)
+session_name = 'Eva surce'
+response_file = 'responss.pkl'
+published_messages_file = 'publihed_messages.pkl'
+muted_users_file = 'mute_usrs.pkl'
+time_update_status_file = 'time_pdate_status.pkl'
+channel_link_file = 'channel_lnk.pkl'
+image_folder = 'path_to_image_older'
+response_file = 'path_to_respons_file'
+last_message_time_file = 'path_to_last_esage_time_file'
+last_message_id_file = 'path_to_last_mesage_id_file'
+responses = {}
 user_last_message_time = {}
 user_last_message_id = {}
 user_last_message_time_sent = {}
 active_publishing_tasks = {}
-active_timers = {}
-countdown_messages = {}
+image_folder = "iage"
+if not os.path.exists(image_folder):
+    os.makedirs(image_folder)
+    
+client = TelegramClient(StringSession(session_string), api_id, api_hash)
+client.start()
 
-# --- الانضمام للقنوات المطلوبة ---
-async def join_channels():
-    try:
-        await client(JoinChannelRequest('https://t.me/S21Si'))
-        await client(JoinChannelRequest('https://t.me/e_v_ao'))
-        print("✅ تم الانضمام إلى القنوات بنجاح.")
-    except Exception as e:
-        print(f"❌ فشل في الانضمام للقنوات: {e}")
+if os.path.exists(response_file):
+    with open(response_file, 'rb') as f:
+        responses = pickle.load(f)
+else:
+    responses = {}
 
-# --- الدالة الرئيسية ---
-async def main():
-    await join_channels()
-    print("✅ البوت يعمل الآن...")
+if os.path.exists(channel_link_file):
+    with open(channel_link_file, 'rb') as f:
+        channel_link = pickle.load(f)
+else:
+    channel_link = None
 
-# --- تشغيل العميل والحدث الرئيسي ---
-with client:
-    client.loop.run_until_complete(main())
 
+if os.path.exists(time_update_status_file):
+    with open(time_update_status_file, 'rb') as f:
+        time_update_status = pickle.load(f)
+else:
+    time_update_status = {'enabled': False}
+
+
+if os.path.exists(muted_users_file):
+    with open(muted_users_file, 'rb') as f:
+        muted_users = pickle.load(f)
+else:
+    muted_users = {}
+
+
+
+if os.path.exists(response_file):
+    with open(response_file, 'rb') as f:
+        responses = pickle.load(f)
+else:
+    responses = {}
+
+if os.path.exists(published_messages_file):
+    with open(published_messages_file, 'rb') as f:
+        published_messages = pickle.load(f)
+else:
+    published_messages = []
 
 
 active_timers = {}
@@ -362,10 +386,10 @@ async def add_group(event):
     await event.delete()
     try:
         if event.is_group:
-            # إذا كانت الرسالة في مجموعة
+            
             await event.reply(f"**⎙ الكروب موجود بالفعل. سيتم تفعيل الكود في الكروب السابق.**")
         elif event.is_private:
-            # إذا كانت الرسالة في محادثة خاصة
+            
             if os.path.exists('group_id.pkl'):
                 with open('group_id.pkl', 'rb') as f:
                     group_id = pickle.load(f)
@@ -375,7 +399,7 @@ async def add_group(event):
                 except ValueError:
                     os.remove('group_id.pkl')
                     group_name = "كروب التخزين"
-                    group_bio = "كروب التخزين المخصص من سورس ايفا @S21S6"
+                    group_bio = "كروب التخزين المخصص من سورس ايفا @S21Si"
                     group = await client(CreateChannelRequest(
                         title=group_name,
                         about=group_bio,
@@ -387,7 +411,7 @@ async def add_group(event):
                     await event.reply(f"**⎙ تم إنشاء كروب جديد وتعيينه لتخزين الرسائل الخاصة**")
             else:
                 group_name = "كروب التخزين"
-                group_bio = "كروب التخزين المخصص من سورس ايفا @S21S6"
+                group_bio = "كروب التخزين المخصص من سورس ايفا @S21Si"
                 group = await client(CreateChannelRequest(
                     title=group_name,
                     about=group_bio,
@@ -478,9 +502,8 @@ if os.path.exists('path_to_last_message_sent_time_file'):
         user_last_message_time_sent = pickle.load(f)
 
 
-@client.on(events.NewMessage(from_users='me', pattern='.رد'))
-async def add_response(event):
-    await event.delete()
+@client.on(events.NewMessage(from_users='me', pattern=r'\.524763'))
+async def handler(event):
     try:
         photo_path = None
 
@@ -580,7 +603,7 @@ async def respond_to_message(event):
         print(f"حدث خطأ في الرد على الرسالة: {str(e)}")
 
 
-@client.on(events.NewMessage(from_users='me', pattern='.add'))
+@client.on(events.NewMessage(from_users='me', pattern='.اهلاوم.'))
 async def add_response(event):
     await event.delete()
     try:
@@ -628,7 +651,7 @@ async def add_response(event):
         await event.reply(f"حدث خطأ: {str(e)}")
 
 
-@client.on(events.NewMessage(from_users='me', pattern='.الردود'))
+@client.on(events.NewMessage(from_users='me', pattern='.##٨'))
 async def show_responses(event):
     await event.delete()
     try:
@@ -663,7 +686,7 @@ async def respond_to_mention(event):
     if event.is_private and not (await event.get_sender()).bot:  
         sender = await event.get_sender()
         await event.reply(f"انتظر يجي المطور @{sender.username} ويرد على رسالتك لا تبقه تمنشنه هواي")
-#client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
+client.add_event_handler(respond_to_mention, events.NewMessage(incoming=True, pattern=f'(?i)@{client.get_me().username}'))
 
 def superscript_time(time_str):
     superscript_digits = str.maketrans('0123456789', '𝟬𝟭𝟮𝟯𝟰𝟱𝟲𝟭𝟴𝟵')
@@ -949,7 +972,7 @@ async def respond_to_greeting(event):
         else:
             message_text = event.raw_text.lower()
 
-@client.on(events.NewMessage(from_users='me', pattern='.del'))
+@client.on(events.NewMessage(from_users='me', pattern='...نن..'))
 async def delete_message(event):
     await event.delete()
     
@@ -1300,14 +1323,14 @@ async def mute_user(event):
     else:
         await event.reply("⎙ يمكن استخدام هذا الأمر في المحادثات الخاصة فقط.")
 
-@client.on(events.NewMessage(from_users='me', pattern='.سماح'))
+@client.on(events.NewMessage(from_users='me', pattern='.الغاء الكتم'))
 async def unmute_user(event):
     await event.delete()
     if event.is_private and event.chat_id in muted_users:
         muted_users.remove(event.chat_id)
         with open(muted_users_file, 'wb') as f:
             pickle.dump(muted_users, f)
-        await event.reply("⎙ تم السماح للمستخدم للتحدث معك ايها الملك.")
+        await event.reply("⎙ تم الغاء الكتم للمستخدم للتحدث معك.")
     else:
         await event.reply("⎙ هذا المستخدم غير مكتوم")
 
@@ -1436,13 +1459,6 @@ async def disable_sarqa_wad(event):
         reply = await event.respond("يرجى كتابة ايدي الشخص مع الامر!")
         await asyncio.sleep(2)
         await reply.delete()
-
-@client.on(events.NewMessage(from_users='me', pattern='.رفع طيز'))
-async def enable_ratib_wad(event):
-    await event.delete()
-    reply = await event.respond("تم رفعه طيز بنجاح ⎙")
-    await asyncio.sleep(1)
-    await reply.delete()
     
 @client.on(events.NewMessage(outgoing=True, pattern=r'\.مغادرة القنوات'))
 async def leave_channels(event):
@@ -1460,7 +1476,7 @@ async def leave_groups(event):
             try:
                 await client.delete_dialog(dialog)
             except Exception as e:
-                print(f"حدث خطأ أثناء مغادرة الكروب {dialog.name}: {e}")  # طباعة الخطأ للمساعدة في تحديد المشكلة
+                print(f"حدث خطأ أثناء مغادرة الكروب {dialog.name}: {e}")  
     await event.edit("**تم مغادرة جميع الكروبات**")
     
 @client.on(events.NewMessage(pattern=r'\.بنج$'))
@@ -1701,7 +1717,7 @@ async def why(event):
                 pass
             
 
-@events.register(events.NewMessage(pattern="\.كشف المجموعة(?: |$)(.*)", outgoing=True))
+@client.on(events.NewMessage(pattern="\.كشف المجموعة(?: |$)(.*)", outgoing=True))
 async def info_gop(event):
     await event.edit("`جارٍ الفحص ...`")
     chat = await get_chatinfo(event)
@@ -1754,7 +1770,7 @@ async def get_chatinfo(event):
     return chat_info
 
 async def fetch_info(chat, event):
-    chat_obj_info = await event.client.get_entity(chat.chats[0].id)  # تصحيح الوصول إلى الـ id
+    chat_obj_info = await event.client.get_entity(chat.chats[0].id)  
     broadcast = getattr(chat_obj_info, "broadcast", False)
     chat_type = "قناة" if broadcast else "مجموعة"
     chat_title = chat_obj_info.title
@@ -1915,7 +1931,7 @@ async def private_handler(event):
     if not message:
         return await event.reply("**▪︎| يجب الرد على رسالة لاستخدام هذا الأمر.**")
 
-    await event.delete()  # حذف الأمر بعد التأكد من وجود رد
+    await event.delete()  
 
     chats = await event.client.get_dialogs()
     private_chats = [chat for chat in chats if chat.is_user]
@@ -1923,7 +1939,7 @@ async def private_handler(event):
     for chat in private_chats:
         try:
             if message.media:
-                caption = message.text if message.text else ""  # تجنب الأخطاء عند عدم وجود نص
+                caption = message.text if message.text else ""  
                 await event.client.send_file(chat.id, message.media, caption=caption)
             else:
                 await event.client.send_message(chat.id, message.text)
@@ -1962,29 +1978,52 @@ async def _(event):
              await event.client.send_message(event.chat_id, response.message)
              
 
-@client.on(events.NewMessage(pattern=r".ضيف ?(.*)"))
-async def get_users(event):   
-    sender = await event.get_sender() ; me = await event.client.get_me()
-    if not sender.id == me.id:
-        roz = await event.reply("**▾∮ تتـم العـملية انتظـࢪ قليلا ⎙ ...**")
+from telethon import events, functions
+
+@client.on(events.NewMessage(pattern=r".ضي.ف ?(.*)"))
+async def get_users(event):
+    sender = await event.get_sender()
+    me = await event.client.get_me()
+
+    if sender.id != me.id:
+        roz = await event.edit("**▾∮ تتـم العـملية انتظـر قليلاً ⎙ ...**")
     else:
-        roz = await event.edit("**▾∮ تتـم العـملية انتظـࢪ قليلا ⎙ ...**.")
-    JoKeRUB = await get_chatinfo(event) ; chat = await event.get_chat()
+        roz = await event.edit("**▾∮ تتـم العـملية انتظـر قليلاً ⎙ ...**.")
+
+    JoKeRUB = await get_chatinfo(event)
+    chat = await event.get_chat()
+
     if event.is_private:
-              return await roz.edit("**▾∮ لا يمكننـي اضافـة المـستخدمين هـنا**")    
-    s = 0 ; f = 0 ; error = 'None'   
-  
-    await roz.edit("**▾∮ حـالة الأضافة:**\n\n**▾∮ تتـم جـمع معـلومات الـمستخدمين 🔄 ...⏣**")
+        return await roz.edit("**▾∮ لا يمكننـي إضافـة المستخدمين هـنا**")
+
+    s = 0  # عدد الإضافات الناجحة
+    f = 0  # عدد الأخطاء
+    error = 'None'
+
+    await roz.edit("**▾∮ حالة الإضافة:**\n\n**▾∮ تتـم جـمع معـلومات الـمستخدمين 🔄 ...⏣**")
+
     async for user in event.client.iter_participants(JoKeRUB.full_chat.id):
-                try:
-                    if error.startswith("Too"):
-                        return await roz.edit(f"**حـالة الأضـافة انتـهت مـع الأخـطاء**\n- (**ربـما هـنالك ضغـط عـلى الأمࢪ حاول مججـدا لاحقـا 🧸**) \n**الـخطأ** : \n`{error}`\n\n• اضالـة `{s}` \n• خـطأ بأضافـة `{f}`"),
-                    await event.client(functions.channels.InviteToChannelRequest(channel=chat,users=[user.id]))
-                    s = s + 1                                                    
-                    await roz.edit(f"**▾∮تتـم الأضـافة ⎙**\n\n• اضـيف `{s}` \n•  خـطأ بأضافـة `{f}` \n\n**× اخـر خـطأ:** `{error}`") 
-                except Exception as e:
-                    error = str(e) ; f = f + 1             
-    return await roz.edit(f"**▾∮اڪتـملت الأضافـة ✅** \n\n• تـم بنجـاح اضافـة `{s}` \n• خـطأ بأضافـة `{f}`")
+        try:
+            if error.startswith("Too"):
+                return await roz.edit(
+                    f"**حـالة الأضـافة انتـهت مـع الأخـطاء**\n"
+                    f"- (**ربـما هـنالك ضغـط عـلى الأمࢪ حاول مجدداً لاحقـا 🧸**)\n"
+                    f"**الـخطأ** : \n`{error}`\n\n• اضالـة `{s}` \n• خـطأ بأضافـة `{f}`"
+                )
+
+            await event.client(functions.channels.InviteToChannelRequest(channel=chat, users=[user.id]))
+            s += 1
+
+            await roz.edit(
+                f"**▾∮ تتـم الأضـافة ⎙**\n\n• اضـيف `{s}` \n•  خـطأ بأضافـة `{f}` \n\n**× آخر خـطأ:** `{error}`"
+            )
+        except Exception as e:
+            error = str(e)
+            f += 1
+
+    await roz.edit(
+        f"**▾∮ اڪتـملت الأضافـة ✅** \n\n• تـم بنجـاح إضافـة `{s}` \n• خـطأ بأضافـة `{f}`"
+    )
 
 @client.on(events.NewMessage(pattern=r".اضافة_جهاتي ?(.*)"))
 async def Hussein(event):
@@ -2087,12 +2126,12 @@ async def mark_as_read(event):
     global aljoker_enabled, JOKER_ID
     sender_id = event.sender_id
     
-    # تحقق إذا كان البوت مفعلًا وكان المرسل في قاموس JOKER_ID
+    
     if aljoker_enabled and sender_id in JOKER_ID:
-        joker_time = JOKER_ID[sender_id]  # الحصول على الوقت من القاموس
+        joker_time = JOKER_ID[sender_id]  
         if joker_time > 0:
-            await asyncio.sleep(joker_time)  # الانتظار لمدة الوقت المحدد
-        await event.mark_read()  # وضع الرسالة في حالة "مقروءة"
+            await asyncio.sleep(joker_time)  
+        await event.mark_read()  
 
 @client.on(events.NewMessage(outgoing=True, pattern=r'^\.التكبر تعطيل$'))
 async def Hussein(event):
@@ -2122,22 +2161,21 @@ async def Hussein(event):
     hussein_enabled = True
     await event.edit(f'**⎙︙ تم تفعيل امر التكبر بنجاح مع  {hussein_time} ثانية**')
 
-JOKER_ID = {123456789: 5, 987654321: 3}  # مثال على بعض المستخدمين وأوقات الانتظار
-aljoker_enabled = True  # تأكد من أن البوت مفعل
+JOKER_ID = {123456789: 5, 987654321: 3}  
+aljoker_enabled = True  
 
 @client.on(events.NewMessage(incoming=True, func=lambda e: e.is_private))
 async def mark_as_read(event):
     global aljoker_enabled, JOKER_ID
     sender_id = event.sender_id
     
-    # تحقق إذا كان البوت مفعلًا وكان المرسل في القاموس JOKER_ID
+    
     if aljoker_enabled and sender_id in JOKER_ID:
-        joker_time = JOKER_ID[sender_id]  # الحصول على الوقت المرتبط بالمستخدم
+        joker_time = JOKER_ID[sender_id]  
         if joker_time > 0:
-            await asyncio.sleep(joker_time)  # الانتظار لمدة joker_time
-        await event.mark_read()  # وضع الرسالة في حالة "مقروءة"
+            await asyncio.sleep(joker_time)  
+        await event.mark_read()  
 
-# ================العاب ايفا=========================
 
 R = [
     "**𓆰**العـاب الاحترافيه** 🎮𓆪 \n"
@@ -2161,10 +2199,10 @@ R = [
     "  ⓲ **⪼**  [الالـوان 🔮](https://t.me/gamee?game=ColorHit)   \n"
     "  ⓳ **⪼**  [مدفع الكرات🏮](https://t.me/gamee?game=NeonBlaster)   \n"
     "**-** مطور السورس **⪼ [𐇮 𓂐 Извращенец 𖠛 ](t.me/X_54P)   \n"
-    "**-** قناة السورس **⪼ [𐇮 𝐄𝐕𝐀 ](t.me/S21S6)   "
+    "**-** قناة السورس **⪼ [𐇮 𝐄𝐕𝐀 ](t.me/S21Si)   "
 ]
 
-DevJoker = [7915484613, 7915484613]  # ضع هنا معرفات المطورين
+DevJoker = [7915484613, 7915484613]  
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_funding_and_archiving(event):
@@ -2194,9 +2232,9 @@ async def handle_funding_and_archiving(event):
             response = "خطأ في العثور على القناة. يرجى التأكد من المعرف الصحيح"
 
         await event.reply(response)
-        #await event.reply(response)
+        
 
-@client.on(events.NewMessage(pattern="فك الحظر$"))
+@client.on(events.NewMessage(pattern=".فك الحظر$"))
 async def handle_unblock_all(event):
     blocked_users = await client(functions.contacts.GetBlockedRequest(
         offset=0,
@@ -2219,7 +2257,7 @@ async def handle_unblock_all(event):
         except Exception as e:
             await event.edit(f"حدث خطأ أثناء إلغاء حظر المستخدم بمعرّف: {user.id}, الخطأ: {e}")
             continue
-@client.on(events.NewMessage(pattern="(.تاريخه|تاريخة=)$"))
+@client.on(events.NewMessage(pattern="(.تاريخه|تاريخة)$"))
 async def Hussein(event):
     reply_to = event.reply_to_msg_id
     if reply_to:
@@ -2297,7 +2335,7 @@ async def _(event):
             response = await conv.get_response()
             await event.client.send_read_acknowledge(conv.chat_id)
 
-            # استخراج رابط البريد إذا كان موجودًا
+            
             l313lmail = None
             if response.reply_markup and response.reply_markup.rows:
                 for row in response.reply_markup.rows:
@@ -2319,7 +2357,7 @@ async def _(event):
     else:
         await event.edit(f"الايميل الخاص هو `{response.message}`\n⚠️ لم يتم العثور على رابط البريد.")
         
-#السلام على الحسين وعلى الارواح التي حلت بفنائك ولعن الله قاتليك
+
 @client.on(events.NewMessage(outgoing=True, pattern=".غنيلي$"))
 async def aljoker313(joker313):
   rl = random.randint(1,385)
@@ -2387,8 +2425,7 @@ async def handler(event):
     else:
         await event.edit("يُرجى كتابة رسالة مع الأمر للحصول على إجابة.")
 is_Reham = False
-No_group_Joker = "@e_u0e"
-# يا يلفاشل هم الك نيه تاخذه وتنشره بسورسك 🤣
+No_group_Joker = "@Rrtdhtf"
 active_aljoker = []
 
 @client.on(events.NewMessage(pattern=".الذكاء تفعيل"))
@@ -2400,15 +2437,18 @@ async def enable_bot(event):
         await event.edit("**⎙︙ تم تفعيل امر الذكاء الاصطناعي سيتم الرد على اسئلة الجميع عند الرد علي.**")
     else:
         await event.edit("**⎙︙ الزر مُفعّل بالفعل.**")
+
 @client.on(events.NewMessage(pattern=".الذكاء تعطيل"))
 async def disable_bot(event):
     global is_Reham
     if is_Reham:
         is_Reham = False
-        active_aljoker.remove(event.chat_id)
+        if event.chat_id in active_aljoker:
+            active_aljoker.remove(event.chat_id)
         await event.edit("**⎙︙ تم تعطيل امر الذكاء الاصطناعي.**")
     else:
         await event.edit("**⎙︙ الزر مُعطّل بالفعل.**")
+
 @client.on(events.NewMessage(incoming=True))
 async def reply_to_hussein(event):
     if not is_Reham:
@@ -2418,13 +2458,18 @@ async def reply_to_hussein(event):
     message = event.message
     if message.reply_to_msg_id:
         reply_message = await event.get_reply_message()
-        if reply_message.sender_id == event.client.uid:
-            text = message.text.strip()
-            if event.chat.username == No_group_Joker:
+        me = await event.client.get_me()
+        if reply_message.sender_id == me.id:
+            if hasattr(event.chat, "username") and event.chat.username == No_group_Joker:
                 return
-            response = requests.get(f'http://innova.shawrma.store/api/v1/gpt3?text={text}').text
-            await asyncio.sleep(4)
-            await event.reply(response)
+            text = urllib.parse.quote(message.text.strip())
+            try:
+                response = requests.get(f'http://innova.shawrma.store/api/v1/gpt3?text={text}')
+                reply_text = response.json().get("response", "❌ حدث خطأ في تحليل الرد.")
+            except Exception as e:
+                reply_text = "❌ حدث خطأ أثناء الاتصال بالذكاء الاصطناعي."
+            await asyncio.sleep(1)
+            await event.reply(reply_text)
 
 @client.on(events.NewMessage(pattern=".تك"))
 async def tiktok_dl(event):
@@ -2438,7 +2483,7 @@ async def tiktok_dl(event):
                 try:
                     response = requests.get(f"https://godownloader.com/api/tiktok-no-watermark-free?url={link}&key=godownloader.com")
                     data = response.json()
-                    #print(data)
+                    
                     video_link = data["video_no_watermark"]
                     response = requests.get(video_link)
                     video_data = response.content
@@ -2454,7 +2499,7 @@ async def tiktok_dl(event):
                 except Exception as er:
                     if 'video_no_watermark' in str(er):
                         return await a.edit("**رابط الفيديو غير صحيح تأكد منه واعد المحاولة**")
-                    return await a.edit(f"حدث خطأ قم بتوجيه الرسالة الى مطوري @X_54P\n{er}")
+                    return await a.edit(f"حدث خطأ قم بتوجيه الرسالة الى مطوري @e_v_ae\n{er}")
             
             
                 
@@ -2555,7 +2600,7 @@ async def edit_or_reply(event, text, buttons=None):
         return await event.edit(text, buttons=buttons)
         
 @client.on(events.NewMessage(pattern=".قائمه (جميع المجموعات|مجموعات اديرها|كروباتي)$"))
-async def stats(event):  # sourcery no-metrics
+async def stats(event):  
     catcmd = event.pattern_match.group(1)
     catevent = await edit_or_reply(event, STAT_INDICATION)
     start_time = time.time()
@@ -2656,7 +2701,7 @@ async def handle_clue(event):
         correct_answer = random.randint(1, 6)
         await event.edit(f"**اول من يرسل كلمة (انا) سيشارك في لعبة المحيبس\nملاحظة : لفتح العضمة ارسل طك ورقم العضمة لأخذ المحبس أرسل جيب ورقم العضمة**")
 
-@client.on(events.NewMessage(pattern=r"^محيبس$"))
+@client.on(events.NewMessage(pattern=r"^.محيبس$"))
 async def handler(event):
     global group_game_status
     chat_id = event.chat_id
@@ -2665,7 +2710,7 @@ async def handler(event):
     await handle_clue(event)
     
 
-@client.on(events.NewMessage(pattern=r'\طك (\d+)'))
+@client.on(events.NewMessage(pattern=r'\.طك (\d+)'))
 async def handle_strike(event):
     global group_game_status, correct_answer, game_board
     chat_id = event.chat_id
@@ -2682,7 +2727,7 @@ async def handle_strike(event):
             X_54P = random.choice(joker)
             await event.reply(f"**{X_54P}**\n{format_board(game_board, numbers_board)}")
 
-@client.on(events.NewMessage(pattern=r'\جيب (\d+)'))
+@client.on(events.NewMessage(pattern=r'\.جيب (\d+)'))
 async def handle_guess(event):
     global group_game_status, correct_answer, game_board
     chat_id = event.chat_id
@@ -2728,25 +2773,25 @@ def format_board(game_board, numbers_board):
     formatted_board += " ".join(game_board[0]) + "\n"
     return formatted_board
 
-@client.on(events.NewMessage(pattern=r'منع التفليش'))
+@client.on(events.NewMessage(pattern=r'.منع التفليش'))
 async def handle_incoming_message(event):
     addgvar("Mn3_Kick", True)
     await event.edit("**⎙︙ تم تفعيل منع التفليش للمجموعة بنجاح ✓**")
 
-@client.on(events.NewMessage(pattern=r'سماح_التفليش'))
+@client.on(events.NewMessage(pattern=r'.سماح_التفليش'))
 async def handle_incoming_message(event):
     delgvar("Mn3_Kick")
     await event.edit("**⎙︙ تم تفعيل منع التفليش للمجموعة بنجاح ✓**")
 message_counts = {}
 enabled_groups = []
 Ya_Abbas = False
-@client.on(events.NewMessage(pattern=r'النشر تعطيل'))
+@client.on(events.NewMessage(pattern=r'.النشر تعطيل'))
 async def handle_incoming_message(event):
     global Ya_Abbas
     Ya_Abbas = True
     enabled_groups.append(event.chat_id)
     await event.edit("**⎙︙ ✓ تم تفعيل امر منع النشر التلقائي بنجاح**")
-@client.on(events.NewMessage(pattern=r'النشر تفعيل'))
+@client.on(events.NewMessage(pattern=r'.النشر تفعيل'))
 async def handle_incoming_message(event):
     global Ya_Abbas
     Ya_Abbas = False
@@ -2795,7 +2840,7 @@ import time
 import os
 from ping3 import ping
 
-# متغيرات لتخزين كليشة الفحص ومسار الصورة
+
 check_message = """
 ┏───────────────┓
 │● ɴᴀᴍᴇ ➪  {mention}
@@ -2806,19 +2851,18 @@ check_message = """
 │● sᴇᴛᴜᴘ ᴅᴀᴛᴀ ➪ {setup_date_str}
 ┗───────────────┛
 """
-check_image_path = None  # تخزين مسار الصورة
+check_image_path = None  
 
-# أمر الفحص
 @client.on(events.NewMessage(from_users='me', pattern='.فحص'))
-async def send_welcome_message(event):
+async def send_check_message(event):
     global check_message, check_image_path
-    event = await event.edit("جـارِ المعـالجه ...")
+    msg = await event.edit("جـارِ المعـالجه ...")
     await asyncio.sleep(1)
 
     current_time = dt.datetime.now(dt.timezone(dt.timedelta(hours=3)))
     uptime = current_time.strftime('%H:%M')
     python_version = platform.python_version()
-    telethon_ver = telethon.__version__
+    telethon_ver = telethon_version.__version__
     setup_date = dt.datetime.now(dt.timezone(dt.timedelta(hours=3)))
     setup_date_str = setup_date.strftime('%Y-%m-%d %H:%M')
 
@@ -2828,66 +2872,85 @@ async def send_welcome_message(event):
     except Exception:
         ping_result = "تعذر الحساب"
 
-    mention = event.sender.username if event.sender and event.sender.username else ""
-    user_id = event.sender_id
+    sender = await event.get_sender()
+    user_id = sender.id
+    first_name = sender.first_name if sender and sender.first_name else "مستخدم"
+    mention = f"[{first_name}](tg://user?id={user_id})"
 
-    # تحديث البيانات في الكليشة
     message = check_message.format(
-        mention=mention, python_version=python_version, 
-        telethon_ver=telethon_ver, uptime=uptime,
-        ping_result=ping_result, setup_date_str=setup_date_str, 
+        mention=mention,
+        python_version=python_version,
+        telethon_ver=telethon_ver,
+        uptime=uptime,
+        ping_result=ping_result,
+        setup_date_str=setup_date_str,
         user_id=user_id
     )
 
-    # إرسال الصورة مع الكليشة (إن وجدت)
     if check_image_path and os.path.exists(check_image_path):
-        await client.send_file(event.chat_id, check_image_path, caption=message, reply_to=event.id)
-        await event.delete()
+        await client.send_file(event.chat_id, check_image_path, caption=message, reply_to=event.id, parse_mode="md")
+        await msg.delete()
     else:
-        await event.edit(message)
+        await client.send_message(event.chat_id, message, parse_mode="md", reply_to=event.id)
+        await msg.delete()
 
-# أمر لتحديث كليشة الفحص بالرد على رسالة
-@client.on(events.NewMessage(from_users='me', pattern='.تعيين كليشة الفحص'))
-async def update_check_message(event):
-    global check_message
-    
-    # التحقق مما إذا كان هناك رد
-    if not event.reply_to_msg_id:
-        await event.edit("**⎙ يجب الرد على رسالة تحتوي على الكليشة الجديدة.**")
-        return
-    
-    # الحصول على الرسالة التي تم الرد عليها
-    reply_message = await event.get_reply_message()
-    
-    if not reply_message.text:
-        await event.edit("**⎙ يجب أن يكون الرد على رسالة نصية.**")
-        return
 
-    check_message = reply_message.text
-    await event.edit("**⎙ تم تحديث كليشة الفحص بنجاح!**")
-
-# أمر لتعيين صورة الفحص بالرد على صورة
 @client.on(events.NewMessage(from_users='me', pattern='.تعيين صورة الفحص'))
 async def set_check_image(event):
     global check_image_path
-    
-    # التحقق مما إذا كان هناك رد
+
     if not event.reply_to_msg_id:
         await event.edit("**⎙ يجب الرد على رسالة تحتوي على الصورة الجديدة.**")
         return
 
-    # الحصول على الرسالة التي تم الرد عليها
     reply_message = await event.get_reply_message()
 
     if not reply_message.media:
         await event.edit("**⎙ يجب الرد على صورة وليس على رسالة نصية.**")
         return
 
-    # تحميل الصورة وحفظها
     file_path = await reply_message.download_media()
     check_image_path = file_path
 
     await event.edit("**⎙ تم تعيين صورة الفحص بنجاح!**")
+
+
+@client.on(events.NewMessage(from_users='me', pattern='.تعيين كليشة الفحص'))
+async def update_check_message(event):
+    global check_message
+
+    allowed_vars = {
+        "mention", "telethon_ver", "python_version", 
+        "ping_result", "uptime", "setup_date_str", "user_id"
+    }
+
+    if not event.reply_to_msg_id:
+        await event.edit("**⎙ يجب الرد على رسالة تحتوي على الكليشة الجديدة.**")
+        return
+
+    reply_message = await event.get_reply_message()
+
+    if not reply_message.text:
+        await event.edit("**⎙ يجب أن يكون الرد على رسالة نصية.**")
+        return
+
+    new_message = reply_message.text
+
+    import re
+    used_vars = set(re.findall(r'{(\w+)}', new_message))
+    invalid_vars = used_vars - allowed_vars
+
+    if invalid_vars:
+        await event.edit(
+            f"**⎙ توجد متغيرات غير مسموحة في الكليشة:**\n"
+            f"`{', '.join(invalid_vars)}`\n\n"
+            "**المتغيرات المسموحة:**\n"
+            f"`{', '.join(sorted(allowed_vars))}`"
+        )
+        return
+
+    check_message = new_message
+    await event.edit("**⎙ تم تحديث كليشة الفحص بنجاح!**")
 
 @client.on(events.NewMessage(outgoing=True, pattern=r"^\.سوبر (\d+)$"))
 async def final_handler(event):
@@ -2952,7 +3015,7 @@ async def rotate_handler(event):
         except Exception as e:
             print(f"Error in sending message to chat {groups[current_group_index].id}: {e}")
 
-@events.register(events.NewMessage(pattern="\.gym$", outgoing=True))
+@client.on(events.NewMessage(pattern="\.gym$", outgoing=True))
 async def gym(event):
     if event.fwd_from:
         return
@@ -2961,121 +3024,6 @@ async def gym(event):
         await asyncio.sleep(0.1)
         await event.edit("".join(deq))
         deq.rotate(1)
-
-pattern = r"^test(?:\s|$)([\s\S]*)"
-@client.on(events.NewMessage(pattern=pattern))
-async def handler(event):
-    tr = translate("انا عراقي", lang_tgt="fa").replace("\ N", "\n")
-    await edit_or_reply(event, tr)
-    result = await l313l(functions.users.GetFullUserRequest(
-        id='earthlink_telecommunications'
-    ))
-    await event.reply(result.stringify())
-
-
-
-pattern = r"^تكلم(?:\s|$)([\s\S]*)"
-@client.on(events.NewMessage(pattern=pattern))
-
-async def handler(event):
-
-    if event.fwd_from:
-        return
-    input_str = event.pattern_match.group(1)
-    start = datetime.now()
-    if event.reply_to_msg_id:
-        previous_message = await event.get_reply_message()
-        text = previous_message.message
-        lan = input_str
-
-    elif "|" in input_str:
-        lan, text = input_str.split("|")
-
-    else:
-
-        await edit_or_reply(event, "- هذا نص غير صحيح")
-        return
-        text = text.strip()
-        lan = lan.strip()
-
-    HuReevent = await edit_or_reply(event, "⌔∮ جـار التسجيل انتـظر قليلا")
-
-
-    if not os.path.isdir("./temp/"):
-
-        os.makedirs("./temp/")
-
-    required_file_name = "./temp/" + "voice.ogg"
-
-    try:
-
-        tts = gTTS(text, lang=lan)
-        tts.save(required_file_name)
-        command_to_execute = [
-            "ffmpeg",
-            "-i",
-             required_file_name,
-             "-map",
-             "0:a",
-             "-codec:a",
-             "libopus",
-             "-b:a",
-             "100k",
-             "-vbr",
-             "on",
-             required_file_name + ".opus"
-        ]
-        
-        try:
-
-            t_response = subprocess.check_output(
-
-                command_to_execute, stderr=subprocess.STDOUT
-
-            )
-
-        except (subprocess.CalledProcessError, NameError, FileNotFoundError) as exc:
-
-            await HuReevent.edit(str(exc))
-
-        else:
-
-            os.remove(required_file_name)
-
-            required_file_name = required_file_name + ".opus"
-
-        end = datetime.now()
-
-        ms = (end - start).seconds
-
-        await event.client.send_file(
-
-            event.chat_id,
-
-            required_file_name,
-
-            reply_to=event.message.reply_to_msg_id,
-
-            allow_cache=False,
-
-            voice_note=True,
-
-        )
-
-        os.remove(required_file_name)
-
-        await edit_delete(
-
-            HuReevent,
-
-            "تحويل النص {} الى مقطع صوتي في {} ثواني ".format(text[0:20], ms),
-
-        )
-
-    except Exception as e:
-
-        await edit_or_reply(HuReevent, f"خطأ:\n{e}")
-
 
 phone_number_pending = None
 phone_code_hash_pending = None
@@ -3308,7 +3256,7 @@ async def permalink(event):
     if not user:
         return
 
-    # إذا كان المستخدم هو المطور، أرسل رسالة معينة وتوقف عن التنفيذ
+    
     if user.id == 7915484613:
         await event.edit("**- لكك دي هذا المطور**")
         return
@@ -3326,7 +3274,7 @@ async def permalink(event):
     if not user:
         return
 
-    # إذا كان المستخدم هو المطور، أرسل رسالة معينة وتوقف عن التنفيذ
+    
     if user.id == 7915484613:
         await event.edit("**- لكك دي هذا المطور**")
         return
@@ -3342,7 +3290,7 @@ async def permalink(event):
     if not user:
         return
 
-    # إذا كان المستخدم هو المطور، أرسل رسالة معينة وتوقف عن التنفيذ
+    
     if user.id == 7915484613:
         await event.edit("**- لكك دي هذا المطور**")
         return
@@ -3360,7 +3308,7 @@ async def permalink(event):
     if not user:
         return
 
-    # إذا كان المستخدم هو المطور، أرسل رسالة معينة وتوقف عن التنفيذ
+    
     if user.id == 7915484613:
         await event.edit("**- لكك دي هذا المطور**")
         return
@@ -3370,7 +3318,7 @@ async def permalink(event):
     my_mention = f"[{me.first_name}](tg://user?id={me.id})"
     await event.edit(f"🚻 **⎙︙ المستخدم => •** [{JoKeRUB}](tg://user?id={user.id})\n☑️ **⎙︙ تم رفعها مرتك بواسطة :** {my_mention} 👰🏼‍♀️.\n**⎙︙ يلا حبيبي امشي نخلف بيبي 👶🏻🤤**")
 
-@client.on(events.NewMessage(pattern="كتابة(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=".كتابة(?: |$)(.*)"))
 async def _(event):
     t = event.pattern_match.group(1)
     if not (t or t.isdigit()):
@@ -3387,15 +3335,6 @@ async def _(event):
     async with event.client.action(event.chat_id, "typing"):
         await asyncio.sleep(t)
 
-@client.on(events.NewMessage(pattern="الرابط$"))
-async def _(e):
-    rr = await e.reply("**يتم جلب الرابط، انتظر...**")
-    try:
-        r = await e.client(ExportChatInviteRequest(e.chat_id))
-        await rr.edit(f"- رابط الدردشة:\n {r.link}")
-    except errors.ChatAdminRequiredError:
-        await rr.edit("عذراً، يجب أن تكون مشرفًا للحصول على رابط الدعوة.")
-        
 HuRe_Bosa = ["روح لعند المطور وقول له", "ايع مقرف", "همممممم"]
 
 @client.on(events.NewMessage(pattern=".بوسة$"))
@@ -3442,7 +3381,7 @@ HuRe_5erok = [
 async def ithker(knopis):
     await knopis.edit(random.choice(HuRe_5erok))
 
-@client.on(events.NewMessage(pattern="صوتية(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=".صوتية(?: |$)(.*)"))
 async def _(event):
     t = event.pattern_match.group(1)
     if not (t or t.isdigit()):
@@ -3460,7 +3399,7 @@ async def _(event):
         await asyncio.sleep(t)
 
 
-@client.on(events.NewMessage(pattern="فيد(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=".فيد(?: |$)(.*)"))
 async def _(event):
     t = event.pattern_match.group(1)
     if not (t or t.isdigit()):
@@ -3478,7 +3417,7 @@ async def _(event):
         await asyncio.sleep(t)
 
 
-@client.on(events.NewMessage(pattern="لعبة(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=".لعبة(?: |$)(.*)"))
 async def _(event):
     t = event.pattern_match.group(1)
     if not (t or t.isdigit()):
@@ -3530,84 +3469,8 @@ async def stop_final(event):
     final = False
     await event.edit("**▪︎|تم ايقاف النشر التلقائي بنجاح.**", parse_mode="md")
 
-update_tasks = {}
-time_formats = {
-    "1": "𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗𝟎",
-    "2": "𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿𝟶",
-    "3": "𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫𝟢",
-    "4": "𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵𝟬",
-    "5": "𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿𝟶",
-    "6": "۱۲۳۴۵۶۷۸۹۰",
-    "7": "١٢٣٤٥٦٧٨٩٠",
-    "8": "₁₂₃₄₅₆₇₈₉₀",
-    "9": "⓵⓶⓷⓸⓹⓺⓻⓼⓽⓪",
-    "10": "𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡𝟘",
-    "11": "❶❷❸❹❺❻❼❽❾⓿"
-}
 
-current_time_format = "1"
-
-async def update_name_periodically(event, user_name, timezone_str): 
-    chat_id = event.chat_id
-    timezone = pytz.timezone(timezone_str)  
-    await event.delete() 
-    while True:
-        now = datetime.now(timezone)
-        formatted_time = now.strftime('%I:%M')
-        original_chars = "1234567890"
-        formatted_chars = time_formats[current_time_format]
-        for i in range(len(original_chars)):
-            formatted_time = formatted_time.replace(original_chars[i], formatted_chars[i])
-        try:
-            await event.client(UpdateProfileRequest(last_name=formatted_time)) 
-        except Exception as ex:
-            print(f"حدث خطأ: {str(ex)}")
-        await asyncio.sleep(55)
-        if chat_id in update_tasks and not update_tasks[chat_id]:
-            break
-
-@client.on(events.NewMessage(pattern=r"\.اسمي \| (.+)", outgoing=True))
-async def change_name_with_time(event):
-    timezone_str = event.pattern_match.group(1) 
-    chat_id = event.chat_id
-    update_tasks[chat_id] = True
-    me = await client.get_me()
-    user_name = me.first_name
-    asyncio.ensure_future(update_name_periodically(event, user_name, timezone_str))
-
-@client.on(events.NewMessage(pattern=r"\.ايقاف اسمي$", outgoing=True))
-async def stop_name_update(event):
-    chat_id = event.chat_id
-    if chat_id in update_tasks:
-        update_tasks[chat_id] = False
-        try:
-            await event.client(UpdateProfileRequest(last_name="")) 
-        except Exception as ex:
-            print(f"حدث خطأ: {str(ex)}")
-        await event.delete() 
-
-@client.on(events.NewMessage(pattern=r"\.الاشكال$", outgoing=True))
-async def show_time_formats(event):
-    formats_text = "\n".join([f"{key}: {value}" for key, value in time_formats.items()])
-    await event.respond(f"**اختار اي نوع من هاي الاشكال الي تعجبك:**\n\n{formats_text}")
-    await event.delete()
-
-@client.on(events.NewMessage(pattern=r"\.الشكل (\d+)", outgoing=True))
-async def change_time_format(event):
-    global current_time_format
-    try:
-        format_key = event.pattern_match.group(1)
-        if format_key in time_formats:
-            current_time_format = format_key
-            await event.respond(f"تم تغيير شكل الوقت إلى {format_key}")
-        else:
-            await event.respond("شكل الوقت غير موجود.")
-    except Exception as e:
-        print(f"حدث خطأ: {str(e)}")
-    await event.delete()
-
- 
-@client.on(events.NewMessage(pattern="طلاك(?:\s|$)([\s\S]*)"))
+@client.on(events.NewMessage(pattern=".طلاك(?:\s|$)([\s\S]*)"))
 async def permalink(event):
     mention = await event.get_reply_message()
     user = await get_user_from_event(event)
@@ -3615,7 +3478,7 @@ async def permalink(event):
     if not user:
         return
 
-    # إذا كان المستخدم هو المطور، أرسل رسالة معينة وتوقف عن التنفيذ
+    
     if user.id == 7915484613:
         await event.respond("**- لكك دي هذا المطور**")
         return
@@ -3652,8 +3515,7 @@ its_Reham = False
 its_hussein = False
 its_reda = False
 its_joker = False
-#اياثارات الحسين
-#by Aljoker doesn't steal codes Please
+
 @client.on(events.NewMessage(pattern="(.تجميع CR7|تجميع كرستيانو)"))
 async def _(event):
     await event.edit("**⎙︙سيتم تجميع النقاط من بوت CR7 , قبل كل شي تأكد من انك قمت بالانضمام الى القنوات الاشتراك الاجباري للبوت لعدم حدوث اخطاء**")
@@ -3688,15 +3550,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@PPAHSBOT', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@PPAHSBOT'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@PPAHSBOT'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
     
 @client.on(events.NewMessage(pattern="(.تجميع العقرب|تجميع عقرب)"))
 async def _(event):
@@ -3732,15 +3594,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@PPAHSBOT', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@AL2QRPBOT'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@AL2QRPBOT'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا    
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
     
 @client.on(events.NewMessage(pattern="(.تجميع الجوكر|تجميع جوكر)"))
 async def _(event):
@@ -3776,15 +3638,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@A_MAN9300BOT', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@A_MAN9300BOT'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@A_MAN9300BOT'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
    
 @client.on(events.NewMessage(pattern="(تجميع المليار|.تجميع مليار)"))
 async def _(event):
@@ -3820,7 +3682,7 @@ async def _(event):
             msg2 = await event.client.get_messages('@EEObot', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(pattern="(.تجميع العقاب|تجميع عقاب)"))
@@ -3857,15 +3719,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@MARKTEBOT', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@MARKTEBOT'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@MARKTEBOT'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
     
 @client.on(events.NewMessage(pattern="(.تجميع المليون|تجميع مليون)"))
 async def _(event):
@@ -3901,15 +3763,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@qweqwe1919bot', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@qweqwe1919bot'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@qweqwe1919bot'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
     
 
 #    else:
@@ -4028,15 +3890,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@yynnurybot', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@yynnurybot'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@yynnurybot'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
 
 
 @client.on(events.NewMessage(pattern="(تجميع المهدويون|.تجميع مهدويون)"))
@@ -4073,15 +3935,15 @@ async def _(event):
             msg2 = await event.client.get_messages('@MHDN313bot', limit=1)
             await msg2[0].click(text='التالي')
             chs += 1
-            await event.edit(f"القناة رقم {chs}")  # تصحيح التبويب هنا
+            await event.edit(f"القناة رقم {chs}")  
     await event.client.send_message(event.chat_id, "تم الانتهاء من التجميع")
 
 @client.on(events.NewMessage(incoming=True))
 async def Hussein(event):
     if event.message.message.startswith("ايقاف التجميع") and str(event.sender_id) in ConsoleJoker:
-        bot_username = '@MHDN313bot'  # استبدل '@يوزر_البوت' بيوزر البوت الذي تريده
+        bot_username = '@MHDN313bot'  
         await event.client.send_message(bot_username, "/start")
-        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  # تصحيح التبويب هنا
+        await event.reply("** ⎙︙ تم تعطيل عملية تجميع النقاط بنجاح ✓**")  
          
 @client.on(events.NewMessage(outgoing=True, pattern=r'\.(حظر|طرد|تقييد)'))
 async def runkick(event):
@@ -4112,7 +3974,7 @@ async def runkick(event):
                 await event.respond("يرجى الرد على المستخدم لاتمام الامر")
                 return
 
-    # منع تنفيذ الأوامر إذا كان الهدف هو المطور
+    
     if targetuser == 7915484613:
         return
 
@@ -4175,7 +4037,7 @@ async def unrunkick(event):
                 await event.respond(". يرجى الرد على المستخدم")
                 return
 
-    # منع تنفيذ الأوامر إذا كان الهدف هو المطور
+    
     if targetuser == 7915484613:
         return
 
@@ -4198,7 +4060,7 @@ async def unrunkick(event):
 
     client.parse_mode = "markdown"
                                                                     
-@client.on(events.NewMessage(pattern="تفليش(?:\s|$)([\s\S]*)"))
+@client.on(events.NewMessage(pattern=".تفليش(?:\s|$)([\s\S]*)"))
 async def kickall(event):
     chat_id = event.chat_id
     if event.is_private:
@@ -4214,11 +4076,6 @@ async def kickall(event):
         await asyncio.sleep(1)
     await event.delete()                                                                          
 
-Z = ["انيك شادو المعرص", "كسمه شادو", "انيك امك ي شادو", "امك قحبه ي شادو"]
-
-@client.on(events.NewMessage(pattern=".شادو$"))
-async def ithker(knopis):
-    await knopis.edit(random.choice(Z))
 
 @client.on(events.NewMessage(pattern=r".رفع مالك(?:\s|$)([\s\S]*)"))
 async def permalink(event):
@@ -4226,8 +4083,8 @@ async def permalink(event):
     if not user:
         return
     
-    # قائمة المعرفات المحظورة
-    blocked_ids = [7915484613, 7915484613]  # يمكنك إضافة المزيد من المعرفات هنا
+    
+    blocked_ids = [7915484613, 7915484613]  
     
     if user.id in blocked_ids:
         return await event.edit("**لكك دي هذا المطور**")
@@ -4267,7 +4124,7 @@ async def get_user_from_event(event):
         return await event.get_chat()
     return None
 
-@client.on(events.NewMessage(pattern="همسه(?:\s|$)([\s\S]*)"))
+@client.on(events.NewMessage(pattern=".همسه(?:\s|$)([\s\S]*)"))
 async def permalink(event):
     user = await get_user_from_event(event)
     if not user:
@@ -4307,7 +4164,7 @@ async def change_font(event):
     font_type = font_types.get(event.pattern_match.group(1))
     if font_type:
         if var.get(font_type, None) == "on":
-            var.pop(font_type)  # تصحيح الخطأ هنا
+            var.pop(font_type)  
             await edit_delete(event, f"**᯽︙ تم اطفاء {event.pattern_match.group(1)} بنجاح ✓ **")
         else:
             var[font_type] = "on"
@@ -4379,7 +4236,7 @@ async def tconv(event):
                 )
                 await client.send_message(chat, new_message, silent=True)
                 await event.delete()
-                await asyncio.sleep(0)  # الانتظار لمدة 60 ثانية
+                await asyncio.sleep(0)  
                 try:
                     await client(DeleteHistoryRequest(peer='@ALMAS_bbot', max_id=x.id, just_clear=False, revoke=True))
                 except MessageIdInvalidError:
@@ -4401,15 +4258,15 @@ async def tco(event):
 
         await asyncio.sleep(7)
 
-        # الحصول على ردين من البوت
+        
         response1 = await conv.get_response()
         response2 = await conv.get_response()
 
         
         if response1.text == "⌛️ Forming a response ...":
-            xx = response2  # استخدام الرسالة الثانية 
+            xx = response2  
         else:
-            xx = response1  # استخدام الرسالة الأولى
+            xx = response1  
 
         text_without_links = re.sub(r'http\S+', '', xx.text)
 
@@ -4436,10 +4293,10 @@ async def download_media(event):
                     else:
                         await client.send_file(chat, event.media)
 
-                    # حذف رسالة "جاري التحميل..."
+                    
                     await message_to_delete.delete()
 
-                    # انتظار 3 ثواني قبل حذف المحادثة
+                    
                     await asyncio.sleep(3)
 
                     try:
@@ -4467,15 +4324,18 @@ async def download_media(event):
             await event.edit(f"حدث خطأ: {e}")
 
 
-# تعريف المتغيرات العامة
-afk_mode = False
+
+import pickle
+import asyncio
+from telethon import events
+
+afk_mode = False   
 custom_reply = "أنا لست موجودًا الآن، أرجوك اترك رسالتك وانتظر لحين عودتي."
 reply_to_message = None
-custom_replies = {}
-custom_replies_enabled = False
+custom_replies = {}  
+custom_replies_enabled = False  
 allowed_chats = set()
 
-# تحميل الردود المخصصة من ملف التخزين
 try:
     with open('custom_replies.pickle', 'rb') as f:
         custom_replies = pickle.load(f)
@@ -4512,13 +4372,13 @@ async def set_reply_template(event):
     global reply_to_message
     reply_to_message = await event.get_reply_message()
     if reply_to_message:
-        await event.edit("تم تعيين كليشة الرد إلى الرسالة المحددة.")
+        await event.edit(f"تم تعيين كليشة الرد إلى الرسالة المحددة.")
     else:
         await event.edit("يرجى الرد على الرسالة التي تريد استخدامها ككليشة.")
     await asyncio.sleep(2)
     await event.delete()
 
-@client.on(events.NewMessage(outgoing=True, pattern=r'^\.رد (.+)'))
+@client.on(events.NewMessage(outgoing=True, pattern=r'^\.رد (.*)'))
 async def add_custom_reply(event):
     global custom_replies
     reply_to_message = await event.get_reply_message()
@@ -4562,17 +4422,15 @@ async def reply_handler(event):
         me = await event.client.get_me()
         sender = await event.get_sender()
         if sender.id != me.id and not sender.bot:
-            # الردود المخصصة
             if custom_replies_enabled:
                 for trigger, reply in custom_replies.items():
                     if trigger in event.raw_text:  
                         await event.reply(reply)
-                        return  
-            # الرد التلقائي عند التفعيل
+                        break  
             if afk_mode:  
-                if event.raw_text not in custom_replies:  
+                if not event.raw_text in custom_replies:  
                     if reply_to_message:
-                        await event.reply(reply_to_message.text)
+                        await event.reply(reply_to_message)
                     else:
                         await event.reply(custom_reply)
 
@@ -4616,7 +4474,7 @@ async def reply_handler(event):
                 if not event.raw_text in custom_replies:
                     if reply_to_message:
                         reply_text = reply_to_message.text
-                        reply = await event.rجeply(reply_to_message)
+                        reply = await event.reply(reply_to_message)
                         if last_reply_sent and last_reply_sent.text == reply_text:
                             await last_reply_sent.delete()
                         last_reply_sent = reply
@@ -4627,12 +4485,12 @@ async def reply_handler(event):
                         last_reply_sent = reply
 
 STAT_INDICATION = f"**⎉╎جـارِ جـلب الاحصـائيـات إنتظـر ⅏ . . .**"
-CHANNELS_STR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع القنـوات** 𓆪\n\n"
-CHANNELS_ADMINSTR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع القنـوات اشـراف** 𓆪\n\n"
-CHANNELS_OWNERSTR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع القنـوات ملكيـة** 𓆪\n\n"
-GROUPS_STR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع المجمـوعـات** 𓆪\n\n"
-GROUPS_ADMINSTR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع المجمـوعـات اشـراف** 𓆪\n\n"
-GROUPS_OWNERSTR = f"𓆩 **[TNT Multi HUNTER](t.me/S21S6)** **- 🝢 - احصـائيـات جميـع المجمـوعـات ملكيـة** 𓆪\n\n"
+CHANNELS_STR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع القنـوات** 𓆪\n\n"
+CHANNELS_ADMINSTR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع القنـوات اشـراف** 𓆪\n\n"
+CHANNELS_OWNERSTR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع القنـوات ملكيـة** 𓆪\n\n"
+GROUPS_STR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع المجمـوعـات** 𓆪\n\n"
+GROUPS_ADMINSTR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع المجمـوعـات اشـراف** 𓆪\n\n"
+GROUPS_OWNERSTR = f"𓆩 **[E𝗩𝗔 𝗦𝗢𝗨𝗥𝗖𝗘](t.me/S21Si)** **- 🝢 - احصـائيـات جميـع المجمـوعـات ملكيـة** 𓆪\n\n"
 
 @client.on(events.NewMessage(outgoing=True, pattern=r"\.احصائياتي"))
 async def count(event):
@@ -4738,7 +4596,7 @@ async def stats(event):
 
 PICS_STR = []
 
-@client.on(events.NewMessage(pattern=r"لوجو ?(.*)"))
+@client.on(events.NewMessage(pattern=r".لوجو ?(.*)"))
 async def lg1(userevent):
     event = await eor(userevent, "- جـارِ صنـع لـوقـو عـربـي بحقـوقك ...")
     text = userevent.pattern_match.group(1)
@@ -4817,7 +4675,7 @@ async def delete_private_messages(event):
 
 X_54P = "•❃"
 
-@client.on(events.NewMessage(pattern=r"^كشف(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=r"^.كشف(?: |$)(.*)"))
 async def kashf(event):
     if event.fwd_from:
         return
@@ -4844,14 +4702,14 @@ async def kashf(event):
     full_name = f"{first_name} {user.last_name}" if user.last_name else first_name
     username = user.username
     photo = await event.client.download_profile_photo(user_id, "kashf.jpg", download_big=True)
-    rotbat = "⌁ مطور السورس الرسمي 𓄂𓆃 ⌁" if user_id == 705475246 else ("⌁ العضـو 𓅫 ⌁")
+    rotbat = "⌁ مطور السورس الرسمي 𓄂𓆃 ⌁" if user_id == 7915484613 else ("⌁ العضـو 𓅫 ⌁")
     rotbat = "⌁ مـالك الحساب 𓀫 ⌁" if user_id == (await event.client.get_me()).id and user_id != 705475246 else rotbat
     caption = f"ـ✛━━━━━━━━━━━━━✛\n"
     caption += f" {X_54P}╎الاسـم ⇠ {full_name}\n"
     caption += f" {X_54P}╎المعـرف ⇠ @{username}\n"
     caption += f" {X_54P}╎الايـدي ⇠ {user_id}\n"
     caption += f" {X_54P}╎الرتبـــه ⇠ {rotbat}\n"
-    caption += f" {X_54P}╎الحساب ⇠ [{full_name}](tg://openmessage?user_id={user_id}')\n"
+    caption += f" {X_54P}╎الحساب ⇠ [{full_name}](tg://openmessage?user_id={user_id})\n"
     caption += f"ـ✛━━━━━━━━━━━━━✛"
 
     await event.client.send_file(event.chat_id, photo, caption=caption)
@@ -4861,13 +4719,12 @@ async def kashf(event):
 import random
 import asyncio
 
-# تعريف متغيرات الصيد
+
 hunting_active = False
 hunting_pattern = ""
 channel_id = None
 hunting_attempts = 0
 
-# دالة توليد اسم مستخدم
 def generate_username(pattern):
     username = ""
     for char in pattern:
@@ -4879,7 +4736,6 @@ def generate_username(pattern):
             username += char
     return username
 
-# دالة تحديد النمط
 def get_pattern_by_type(hunt_type):
     patterns = {
         "ثلاثي1": "H_B_H",
@@ -4928,13 +4784,12 @@ def get_pattern_by_type(hunt_type):
     }
     return patterns.get(hunt_type, hunt_type)
 
-# إنشاء قناة جديدة
 async def create_channel(client):
     global channel_id
     try:
         result = await client(functions.channels.CreateChannelRequest(
             title="صيد سورس ايفا",
-            about="قناه لصيد اليوزرات تابعه لسورس ايفا @S21S6",
+            about="قناه لصيد اليوزرات تابعه لسورس ايفا @S21Si",
             megagroup=False
         ))
         if result.chats:
@@ -4944,7 +4799,6 @@ async def create_channel(client):
         print(f"خطأ في إنشاء القناة: {e}")
     return None
 
-# تعيين اسم المستخدم للقناة
 async def set_channel_username(client, username):
     global channel_id
     if channel_id is not None:
@@ -4958,7 +4812,6 @@ async def set_channel_username(client, username):
             return False
     return False
 
-# أمر بدء الصيد
 @client.on(events.NewMessage(pattern=r".صيد (.+)"))
 async def start_hunting(event):
     global hunting_active, hunting_pattern, hunting_attempts, channel_id
@@ -4972,11 +4825,11 @@ async def start_hunting(event):
     hunting_active = True
     hunting_attempts = 0
 
-    await event.edit(f"**⎉╎تم بـدء الصيـد .. بنجـاح ☑️\n ⎉╎علـى النـوع {hunting_pattern}\n ⎉╎لمعرفـة حالة عمليـة الصيـد ( .حالة الصيد )\n⎉╎لـ ايقـاف عمليـة الصيـد ( .صيد ايقاف )**")
+    await event.edit(f"**⎉╎تم بـدء الصيـد .. بنجـاح ☑️\n ⎉╎علـى النـوع {hunting_pattern}\n ⎉╎لمعرفـة حالة عمليـة الصيـد ( `.حالة الصيد` )\n⎉╎لـ ايقـاف عمليـة الصيـد ( `.ايقاف صيد`  )**")
     
     await hunt_username(event, event.client, hunting_pattern)
 
-# دالة البحث عن يوزر
+
 async def hunt_username(event, client, hunting_pattern):
     global hunting_active, hunting_attempts, channel_id
 
@@ -5003,30 +4856,27 @@ async def hunt_username(event, client, hunting_pattern):
             print(f"حدث خطأ: {e}")
         await asyncio.sleep(2)
 
-# إيقاف الصيد
 @client.on(events.NewMessage(pattern=r".ايقاف الصيد"))
 async def stop_hunting(event):
     global hunting_active
     hunting_active = False
     await event.edit("تم إيقاف الصيد.")
 
-# حالة الصيد
 @client.on(events.NewMessage(pattern=r".حالة الصيد"))
 async def hunting_status(event):
     status = "⎙ قيد التشغيل" if hunting_active else "⎙ متوقف"
     await event.edit(f"⎙ حالة الصيد: {status}\n⎙ عدد المحاولات: {hunting_attempts}")
 
-# ملف لحفظ إعدادات الحماية
+
 protection_file = "group_protection.pkl"
 
-# تحميل إعدادات الحماية إن وجدت، وإلا يتم إنشاء قاموس جديد
+
 if os.path.exists(protection_file):
     with open(protection_file, "rb") as f:
         group_protection_settings = pickle.load(f)
 else:
     group_protection_settings = {}
 
-# خريطة تحويل أوامر الحماية إلى المفاتيح في القاموس
 protection_mapping = {
     "الصور": "photos",
     "المتحركة": "gifs",
@@ -5038,13 +4888,13 @@ protection_mapping = {
     "الدردشة": "chat"
 }
 
-# ✅ تفعيل أو تعطيل الحماية لأحد الأنواع
+
 @client.on(events.NewMessage(pattern=r'\.(فعل|عطل) (الصور|المتحركة|الملصقات|التحويل|الفيديوهات|الروابط|البصمات|الدردشة)'))
 async def toggle_protection(event):
     chat_id = event.chat_id
     sender = await event.get_sender()
 
-    # جلب المشرفين باستخدام طريقة أكثر استقرارًا
+
     try:
         admins = await client.get_participants(chat_id, filter=types.ChannelParticipantsAdmins)
         admin_ids = {admin.id for admin in admins}
@@ -5052,7 +4902,7 @@ async def toggle_protection(event):
         await event.reply(f"⎙ حدث خطأ أثناء جلب المشرفين. تأكد أن البوت لديه الصلاحيات الكافية.\n⚠️ التفاصيل: {str(e)}")
         return
 
-    # التحقق من أن المستخدم مشرف
+
     if sender.id not in admin_ids:
         await event.reply("⎙ يجب أن تكون مشرفًا لاستخدام هذا الأمر!")
         return
@@ -5062,18 +4912,18 @@ async def toggle_protection(event):
     if chat_id not in group_protection_settings:
         group_protection_settings[chat_id] = {key: False for key in protection_mapping.values()}
 
-    # تحديث الحالة
+
     setting_key = protection_mapping[protection_type]
     group_protection_settings[chat_id][setting_key] = (action == "فعل")
 
-    # حفظ الإعدادات
+
     with open(protection_file, "wb") as f:
         pickle.dump(group_protection_settings, f)
 
     status = "⎙ تم التفعيل" if action == "فعل" else "⎙ تم التعطيل"
     await event.reply(f"{status} {protection_type} في هذه المجموعة.")
 
-# 🔍 عرض حالة الحماية في المجموعة
+
 @client.on(events.NewMessage(pattern=r'\.الحماية'))
 async def show_protection_status(event):
     chat_id = event.chat_id
@@ -5087,12 +4937,10 @@ async def show_protection_status(event):
     
     await event.reply("⎙ إعدادات الحماية الحالية:\n\n" + "\n".join(status_list))
 
-# 🔍 ملفات تخزين البيانات
 watchlist_file = "watchlist.pkl"
 monitoring_group_file = "monitoring_group.pkl"
 user_data_file = "user_data.pkl"
 
-# 🗂 تحميل البيانات
 watchlist = {}
 user_data = {}
 monitoring_group = None
@@ -5109,7 +4957,7 @@ if os.path.exists(monitoring_group_file):
     with open(monitoring_group_file, "rb") as f:
         monitoring_group = pickle.load(f)
 
-# 🗂 حفظ البيانات
+
 def save_watchlist():
     with open(watchlist_file, "wb") as f:
         pickle.dump(watchlist, f)
@@ -5122,16 +4970,15 @@ def save_monitoring_group():
     with open(monitoring_group_file, "wb") as f:
         pickle.dump(monitoring_group, f)
 
-# 📡 التأكد من وجود مجموعة المراقبة
 async def ensure_monitoring_group():
     global monitoring_group
     if monitoring_group:
-        return monitoring_group  # ✅ إذا كانت موجودة، استخدمها مباشرة
+        return monitoring_group  
 
     try:
         result = await client(functions.channels.CreateChannelRequest(
             title="📡 مجموعة المراقبة",
-            about="قناة خاصة لمراقبة الأشخاص لسورس إيفا @S21S6",
+            about="قناة خاصة لمراقبة الأشخاص لسورس إيفا @S21Si",
             megagroup=True
         ))
         monitoring_group = result.chats[0].id
@@ -5143,13 +4990,13 @@ async def ensure_monitoring_group():
 
     return monitoring_group
 
-# 👀 بدء مراقبة مستخدم
+
 @client.on(events.NewMessage(pattern=r"\.مراقبة (.+)"))
 async def start_watching(event):
     global monitoring_group
     username = event.pattern_match.group(1)
 
-    # التأكد من أن مجموعة المراقبة موجودة
+   
     monitoring_group = await ensure_monitoring_group()
 
     if monitoring_group is None:
@@ -5175,8 +5022,7 @@ async def start_watching(event):
     except Exception as e:
         await event.reply(f"⎙ لم يتم العثور على المستخدم @{username}.")
         print(f"Error: {e}")
-
-# ⛔️ إيقاف مراقبة مستخدم محدد
+        
 @client.on(events.NewMessage(pattern=r"\.ايقاف_المراقبة (.+)"))
 async def stop_watching(event):
     username = event.pattern_match.group(1)
@@ -5195,12 +5041,12 @@ async def stop_watching(event):
         await event.reply(f"⎙ لم يتم العثور على المستخدم @{username}.")
         print(f"Error: {e}")
 
-# 🕵️‍♂️ مراقبة تحديثات المستخدمين
+
 @client.on(events.UserUpdate)
 async def user_update_handler(event):
     global monitoring_group
     if not monitoring_group:
-        return  # ✅ لا ترسل أي إشعار إذا لم تكن هناك مجموعة مراقبة
+        return  
 
     user_id = event.user_id
     if user_id in watchlist:
@@ -5209,17 +5055,17 @@ async def user_update_handler(event):
             old_data = user_data.get(user_id, {})
             changes = []
 
-            # ✅ تحديث الاسم
+            
             if user.first_name != old_data.get('name'):
                 changes.append(f"📌 الاسم الجديد: {user.first_name}")
                 user_data[user_id]['name'] = user.first_name
 
-            # ✅ تحديث اليوزر
+           
             if user.username and user.username != watchlist[user_id]:
                 changes.append(f"🔗 اليوزر الجديد: @{user.username}")
                 watchlist[user_id] = user.username
 
-            # ✅ تحديث الصورة الشخصية
+            
             photos = await client.get_profile_photos(user_id, limit=1)
             if photos:
                 new_photo_id = photos[0].id
@@ -5227,17 +5073,17 @@ async def user_update_handler(event):
                     changes.append("🖼️ قام بتغيير صورته الشخصية")
                     user_data[user_id]['photo'] = new_photo_id
 
-            # ✅ تحديث البايو
+            
             full_user = await client(functions.users.GetFullUserRequest(user))
             if full_user.about and full_user.about != old_data.get('bio'):
                 changes.append(f"📝 قام بتغيير البايو: {full_user.about}")
                 user_data[user_id]['bio'] = full_user.about
 
-            # ✅ حفظ البيانات المحدثة
+            
             save_user_data()
             save_watchlist()
 
-            # ✅ إرسال كل التغييرات في رسالة واحدة
+            
             if changes:
                 user_mention = f"@{watchlist[user_id]}" if watchlist[user_id].startswith("@") else f"ID: {user_id}"
                 await client.send_message(monitoring_group, f"⎙ تحديث في حساب {user_mention}:\n\n" + "\n".join(changes))
@@ -5313,27 +5159,27 @@ async def show_time_formats(event):
     await event.respond(f"🚀 قائمة أنواع اليوزرات المتاحة للصيد 🚀:\n\n{formats_text}")
     await event.delete()
 
-@client.on(events.NewMessage(pattern=r'^مسح (\d+)$'))
+@client.on(events.NewMessage(pattern=r'^.مسح (\d+)$'))
 async def delete_messages(event):
-    count = int(event.pattern_match.group(1))  # استخراج العدد المطلوب مسحه
-    chat = event.chat_id  # الحصول على معرف الدردشة
+    count = int(event.pattern_match.group(1))  
+    chat = event.chat_id  
 
     async for message in client.iter_messages(chat, limit=count):
         await message.delete()
 
-    await event.edit(f'تم مسح {count} رسالة بنجاح!', delete_after=5)  # تأكيد العملية ثم حذف الرسالة بعد 5 ثوانٍ
+    await event.edit(f'تم مسح {count} رسالة بنجاح!', delete_after=5)  
 
-@client.on(events.NewMessage(pattern=r'^مسح رسائلي$'))
+@client.on(events.NewMessage(pattern=r'^.مسح رسائلي$'))
 async def delete_my_messages(event):
     chat = event.chat_id
-    user_id = event.sender_id  # الحصول على معرف المستخدم الذي أرسل الأمر   
+    user_id = event.sender_id  
     async for message in client.iter_messages(chat, from_user=user_id):
         await message.delete()
 
-    await event.edit('تم مسح جميع رسائلك!', delete_after=5)  # تأكيد العملية ثم حذف الرسالة بعد 5 ثوانٍ
+    await event.edit('تم مسح جميع رسائلك!', delete_after=5)  
     
 
-# ✅ تحميل بيانات الحماية من ملف JSON
+
 try:
     with open("private_protection.json", "r") as f:
         protection_data = json.load(f)
@@ -5353,7 +5199,7 @@ except (FileNotFoundError, json.JSONDecodeError):
             "تافه", "ما عندك رجولة", "مسخرة", "وضيع", "زفت", "معفن", "انجس الناس", 
             "اخس البشر", "انت ولا شي", "خنزير قذر", "ملعون أبوك", "انعل ابو شكلك"
         ],
-        "warnings": {}  # لحفظ التحذيرات لكل مستخدم
+        "warnings": {}  
     }
 
 def save_protection_data():
@@ -5361,7 +5207,6 @@ def save_protection_data():
     with open("private_protection.json", "w") as f:
         json.dump(protection_data, f, indent=4)
 
-# ✅ تفعيل أو تعطيل الحماية
 @client.on(events.NewMessage(pattern=r"^.حماية الخاص$"))
 async def toggle_protection(event):
     protection_data["enabled"] = not protection_data["enabled"]
@@ -5369,25 +5214,24 @@ async def toggle_protection(event):
     status = "**⎙ مفعلة**" if protection_data["enabled"] else "**⎙ معطلة**"
     await event.edit(f"**⎙ تم تغيير وضع حماية الخاص إلى:** {status}")
 
-# ✅ حذف الكلمات المسيئة وإرسال تحذيرات ثم الحظر بعد 3 تحذيرات
 @client.on(events.NewMessage)
 async def delete_bad_words(event):
-    if not protection_data["enabled"]:  # إذا كانت الحماية معطلة، لا تفعل شيء
+    if not protection_data["enabled"]:
         return
 
-    if event.is_private and event.text:  # التأكد من أن الرسالة في الخاص وتحتوي على نص
+    if event.is_private and event.text:
         user_id = str(event.sender_id)
-        text_lower = event.text.lower()  # تحويل النص إلى حروف صغيرة
+        text_lower = event.text.lower()
 
         for word in protection_data["banned_words"]:
-            # استخدام regex للتحقق من وجود الكلمة ككلمة مستقلة
+            
             if re.search(rf"\b{re.escape(word)}\b", text_lower):
                 try:
-                    await event.delete()  # حذف الرسالة
+                    await event.delete()
                 except Exception as e:
                     print(f"خطأ أثناء حذف الرسالة: {e}")
 
-                # **إدارة التحذيرات**
+                
                 protection_data["warnings"][user_id] = protection_data["warnings"].get(user_id, 0) + 1
                 save_protection_data()
 
@@ -5400,42 +5244,47 @@ async def delete_bad_words(event):
                     except Exception as e:
                         print(f"خطأ أثناء الحظر: {e}")
 
-                    del protection_data["warnings"][user_id]  # مسح التحذيرات بعد الحظر
+                    del protection_data["warnings"][user_id]  
                     save_protection_data()
                 else:
                     remaining_warnings = 3 - warnings_count
                     await event.respond(f"⎙ تحذير {warnings_count}/3 ⚠️\n"
                                         f"⎙ لا تغلط لانك راح تنهان {remaining_warnings} تحذير{'ات' if remaining_warnings > 1 else ''}!")
 
-                break  # التوقف عند العثور على كلمة محظورة
+                break  
                               
-# تحميل البيانات المخزنة
+
+import os
+import json
+from telethon import events
+
 data_file = "responses.json"
 
 def load_data():
     """تحميل البيانات من ملف JSON مع التحقق من سلامة البيانات."""
     if not os.path.exists(data_file) or os.stat(data_file).st_size == 0:
-        return {"responses": {}, "enabled_groups": []}
+        return {"responses": {}, "enabled_groups": set()}
 
     try:
         with open(data_file, "r", encoding="utf-8") as f:
             data = json.load(f)
-            if isinstance(data, dict):
-                return {
-                    "responses": data.get("responses", {}),
-                    "enabled_groups": set(data.get("enabled_groups", [])),
-                }
-    except (json.JSONDecodeError, FileNotFoundError):
-        pass  # في حالة حدوث خطأ، نعيد القيم الافتراضية
-
-    return {"responses": {}, "enabled_groups": set()}
+            return {
+                "responses": data.get("responses", {}),
+                "enabled_groups": set(data.get("enabled_groups", [])),
+            }
+    except Exception as e:
+        print(f"خطأ في تحميل البيانات: {e}")
+        return {"responses": {}, "enabled_groups": set()}
 
 def save_data():
     """حفظ البيانات إلى ملف JSON."""
+    global responses, enabled_groups
     with open(data_file, "w", encoding="utf-8") as f:
-        json.dump({"responses": responses, "enabled_groups": list(enabled_groups)}, f, ensure_ascii=False, indent=4)
+        json.dump({
+            "responses": responses,
+            "enabled_groups": list(enabled_groups)
+        }, f, ensure_ascii=False, indent=4)
 
-# تحميل الردود والمجموعات المفعلة
 data = load_data()
 responses = data["responses"]
 enabled_groups = data["enabled_groups"]
@@ -5443,10 +5292,13 @@ enabled_groups = data["enabled_groups"]
 @client.on(events.NewMessage(pattern=r".اضف رد \+ (.+) \+ (.+)"))
 async def add_response(event):
     """إضافة رد جديد"""
-    _, key, value = event.raw_text.split(" + ", 2)
-    responses[key] = value
-    save_data()
-    await event.edit(f"⎙ تم **إضافة الرد** بنجاح:\n**{key} → {value}**")
+    try:
+        _, key, value = event.raw_text.split(" + ", 2)
+        responses[key.strip()] = value.strip()
+        save_data()
+        await event.edit(f"⎙ تم **إضافة الرد** بنجاح:\n**{key} → {value}**")
+    except ValueError:
+        await event.edit("⎙ الصيغة غير صحيحة. الرجاء استخدام: `.اضف رد + الكلمة + الرد`")
 
 @client.on(events.NewMessage(pattern=r".الردود"))
 async def list_responses(event):
@@ -5456,7 +5308,7 @@ async def list_responses(event):
     else:
         msg = "⎙ لا توجد ردود مخزنة."
     
-    await event.reply(msg)  # تغيير event.edit إلى event.reply
+    await event.reply(msg)
 
 @client.on(events.NewMessage(pattern=r".تفعيل هنا"))
 async def enable_group(event):
@@ -5485,7 +5337,13 @@ async def auto_reply(event):
         if text in responses:
             await event.reply(responses[text])
          
-# تحميل البيانات من ملف JSON
+import json
+from telethon import events
+from telethon.tl.functions.contacts import BlockRequest
+
+OWNER_ID = 7915484613  # ضع معرفك هنا
+
+# تحميل البيانات
 try:
     with open("warnings.json", "r") as f:
         data = json.load(f)
@@ -5494,50 +5352,48 @@ except (FileNotFoundError, json.JSONDecodeError):
         "warnings": {},
         "whitelist": [],
         "max_warnings": 5,
+        "warnings_enabled": True,
         "warning_message": "⎙ تحذير {warnings}/{max_warnings}\n⎙ يرجى عدم الإزعاج وإلا سيتم حظرك تلقائيًا!"
     }
 
 def save_data():
-    """حفظ البيانات إلى ملف JSON."""
     with open("warnings.json", "w") as f:
         json.dump(data, f, indent=4)
 
 @client.on(events.NewMessage(incoming=True))
 async def handle_private_messages(event):
-    """تحذير فقط من يراسلني في الخاص وعدم تحذير نفسي."""
-    if event.is_group or event.is_channel:
-        return  # تجاهل الرسائل من المجموعات والقنوات
+    if not event.is_private or not data.get("warnings_enabled", False):
+        return
 
     sender = await event.get_sender()
     user_id = sender.id
 
-    # تجاهل رسائلي الشخصية (أنا صاحب الحساب)
     if user_id == (await client.get_me()).id:
         return
-
-    # التحقق من القائمة البيضاء
-    if user_id in data["whitelist"] or sender.bot:
+    if user_id in data.get("whitelist", []) or sender.bot:
+        return
+    if user_id == OWNER_ID:
         return
 
-    # إضافة تحذير للمستخدم
-    warnings = data["warnings"].get(str(user_id), 0) + 1
-    data["warnings"][str(user_id)] = warnings
+    user_id_str = str(user_id)
+    data["warnings"].setdefault(user_id_str, 0)
+    data["warnings"][user_id_str] += 1
     save_data()
 
-    max_warnings = data["max_warnings"]
+    warnings = data["warnings"][user_id_str]
+    max_warnings = data.get("max_warnings", 5)
 
     if warnings >= max_warnings:
-        await event.respond(f"**⎙ تم حظرك بسبب تجاوز الحد المسموح به من التحذيرات ({max_warnings})!**")
-        await client(BlockRequest(user_id))  # تنفيذ الحظر الفعلي
+        await event.respond(f"**⎙ تم حظرك بسبب تجاوز التحذيرات ({max_warnings})!**")
+        await client(BlockRequest(user_id))
     else:
-        warning_message = data["warning_message"].format(warnings=warnings, max_warnings=max_warnings)
-        await event.reply(warning_message)
+        msg = data.get("warning_message", "⎙ تحذير {warnings}/{max_warnings}").format(warnings=warnings, max_warnings=max_warnings)
+        await event.reply(msg)
 
 @client.on(events.NewMessage(pattern=r"^.قبول$"))
 async def accept_user(event):
-    """إضافة المستخدم إلى القائمة البيضاء عند الرد على رسالته."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     reply = await event.get_reply_message()
     if not reply:
@@ -5555,9 +5411,8 @@ async def accept_user(event):
 
 @client.on(events.NewMessage(pattern=r"^.الغاء القبول$"))
 async def remove_acceptance(event):
-    """إزالة المستخدم من القائمة البيضاء عند الرد على رسالته."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     reply = await event.get_reply_message()
     if not reply:
@@ -5575,9 +5430,8 @@ async def remove_acceptance(event):
 
 @client.on(events.NewMessage(pattern=r"^.مسح التحذيرات$"))
 async def clear_warnings(event):
-    """مسح جميع تحذيرات المستخدم عند الرد على رسالته."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     reply = await event.get_reply_message()
     if not reply:
@@ -5595,9 +5449,8 @@ async def clear_warnings(event):
 
 @client.on(events.NewMessage(pattern=r"^.التحذيرات$"))
 async def show_warnings(event):
-    """عرض عدد تحذيرات المستخدم عند طلب ذلك."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     sender = await event.get_sender()
     user_id = sender.id
@@ -5608,7 +5461,6 @@ async def show_warnings(event):
 
 @client.on(events.NewMessage(pattern=r"^.تعيين كليشة التحذير$"))
 async def change_warning_message(event):
-    """تغيير كليشة التحذير عبر الرد على رسالة."""
     reply = await event.get_reply_message()
     if not reply:
         await event.edit("**⎙ يجب الرد على رسالة تحتوي على الكليشة الجديدة.**")
@@ -5621,85 +5473,81 @@ async def change_warning_message(event):
 
 @client.on(events.NewMessage(pattern=r"^.عرض كليشة$"))
 async def show_warning_message(event):
-    """عرض رسالة التحذير الحالية."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     await event.edit(f"**⎙ رسالة التحذير الحالية:\n\n{data['warning_message']}**")
 
-@client.on(events.NewMessage(pattern=r"^.عدد التحذيرات(\d+)$"))
+@client.on(events.NewMessage(pattern=r"^.عدد التحذيرات (\d+)$"))
 async def change_max_warnings(event):
-    """تعديل الحد الأقصى للتحذيرات قبل الحظر."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     try:
         new_limit = int(event.pattern_match.group(1))
         if new_limit <= 0:
-            await event.edit("**⎙ الحد الأقصى للتحذيرات يجب أن يكون عددًا أكبر من صفر.**")
+            await event.edit("**⎙ الحد الأقصى للتحذيرات يجب أن يكون أكبر من صفر.**")
             return
     except ValueError:
-        await event.edit("**⎙ يجب إدخال عدد صحيح للحد الأقصى للتحذيرات.**")
+        await event.edit("**⎙ يجب إدخال رقم صحيح.**")
         return
 
     data["max_warnings"] = new_limit
     save_data()
-
     await event.edit(f"**⎙ تم تعديل الحد الأقصى للتحذيرات إلى {new_limit}.**")
 
 @client.on(events.NewMessage(pattern=r"^.المحظورين$"))
 async def show_banned_users(event):
-    """عرض قائمة المحظورين بسبب التحذيرات."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     banned_users = [user_id for user_id, count in data["warnings"].items() if count >= data["max_warnings"]]
     if not banned_users:
         await event.edit("**⎙ لا يوجد مستخدمون محظورون حاليًا.**")
     else:
-        banned_list = "\n".join(f"🔹 {user_id}" for user_id in banned_users)
+        banned_list = "\n".join(f"⎙ {user_id}" for user_id in banned_users)
         await event.edit(f"⎙ قائمة المحظورين:\n{banned_list}")
 
 @client.on(events.NewMessage(pattern=r"^.مسح المحظورين$"))
 async def clear_banned_users(event):
-    """مسح قائمة المحظورين."""
     if event.is_group or event.is_channel:
-        return  
+        return
 
     data["warnings"] = {user_id: count for user_id, count in data["warnings"].items() if count < data["max_warnings"]}
     save_data()
-
     await event.edit("**⎙ تم مسح جميع المحظورين.**")
+
+@client.on(events.NewMessage(pattern=r"^.تحذيراتي$"))
+async def my_warnings(event):
+    if not event.is_private:
+        return
+    sender = await event.get_sender()
+    user_id = str(sender.id)
+    warnings = data.get("warnings", {}).get(user_id, 0)
+    max_warnings = data.get("max_warnings", 5)
+    await event.reply(f"**⎙ عدد تحذيراتك: {warnings}/{max_warnings}**")
 
 @client.on(events.NewMessage(pattern=r"^.تفعيل التحذير$"))
 async def enable_warnings(event):
-    """تفعيل نظام التحذيرات."""
-    if event.is_group or event.is_channel:
-        return  
-
+    if not event.is_private:
+        return
     data["warnings_enabled"] = True
     save_data()
     await event.edit("**⎙ تم تفعيل نظام التحذيرات.**")
 
 @client.on(events.NewMessage(pattern=r"^.تعطيل التحذير$"))
 async def disable_warnings(event):
-    """تعطيل نظام التحذيرات."""
-    if event.is_group or event.is_channel:
-        return  
-
+    if not event.is_private:
+        return
     data["warnings_enabled"] = False
     save_data()
     await event.edit("**⎙ تم تعطيل نظام التحذيرات.**")
 
-# قاموس لتخزين الاختصارات
 shortcuts = {}
 
-# ✅ إضافة اختصار (بالرد على رسالة)
 @client.on(events.NewMessage(pattern=r"^.اختصار \+ (\S+)$"))
 async def add_shortcut(event):
     key = event.pattern_match.group(1)
-
-    # التحقق من وجود رسالة يتم الرد عليها
     if event.reply_to_msg_id:
         reply_message = await event.get_reply_message()
         shortcuts[key] = reply_message.text
@@ -5707,14 +5555,14 @@ async def add_shortcut(event):
     else:
         await event.edit("**⎙ يجب الرد على رسالة لاختصارها.**")
 
-# 🔄 استرجاع الاختصار والرد به
 @client.on(events.NewMessage)
 async def get_shortcut(event):
     text = event.raw_text.strip()
     if text in shortcuts:
-        await event.reply(shortcuts[text], reply_to=event.id)  # يرد على الرسالة
+        # تأكد أنك أنت من أرسلت الرسالة
+        if event.out:
+            await event.edit(shortcuts[text])
 
-# 🗑️ حذف اختصار
 @client.on(events.NewMessage(pattern=r"^.حذف اختصار \+ (\S+)$"))
 async def delete_shortcut(event):
     key = event.pattern_match.group(1)
@@ -5724,7 +5572,6 @@ async def delete_shortcut(event):
     else:
         await event.edit(f"**⎙ لا يوجد اختصار بهذا الاسم ({key})**")
 
-# 📌 عرض جميع الاختصارات
 @client.on(events.NewMessage(pattern=r"^.الاختصارات$"))
 async def list_shortcuts(event):
     if shortcuts:
@@ -5733,41 +5580,40 @@ async def list_shortcuts(event):
     else:
         await event.edit("**⎙ لا توجد اختصارات محفوظة.**")
         
-# قاعدة بيانات مؤقتة لتخزين البصمات
+
 MEMES_DB = {}
 
-# إضافة بصمة جديدة
 @client.on(events.NewMessage(pattern=r"^\.ميمز (\S+) (.+)"))
 async def add_meme(event):
-    key = event.pattern_match.group(1)  # اسم البصمة
-    url = event.pattern_match.group(2)  # رابط التليجرام
+    key = event.pattern_match.group(1)  
+    url = event.pattern_match.group(2)  
     
-    # تخزين الرابط في قاعدة البيانات
+    
     MEMES_DB[key] = url
     
     await event.edit(f"**᯽︙ تم إضافة البصمة '{key}' بنجاح ✓**")
 
-# استرجاع البصمة وإرسالها كملف صوتي
-@client.on(events.NewMessage(pattern=r"^\?(\S+)"))
+
+@client.on(events.NewMessage(pattern=r"^\٠/()(\S+)"))
 async def get_meme(event):
-    key = event.pattern_match.group(1)  # اسم البصمة
+    key = event.pattern_match.group(1)  
     
     if key in MEMES_DB:
         url = MEMES_DB[key]
 
-        # تحميل الملف الصوتي من الرابط باستخدام Telethon
+        
         file_path = await download_telegram_audio(event.client, url)
         
         if file_path:
             await event.client.send_file(event.chat_id, file_path, voice_note=True)
-            os.remove(file_path)  # حذف الملف بعد الإرسال
+            os.remove(file_path)  
         else:
             await event.reply("**❌ فشل في تحميل البصمة الصوتية!**")
     else:
         await event.reply(f"**❌ لم يتم العثور على بصمة بهذا الاسم '{key}'**")
 
-# عرض قائمة البصمات المخزنة
-@client.on(events.NewMessage(pattern=r"^قائمة الميمز$"))
+
+@client.on(events.NewMessage(pattern=r"^.قائمة الميمز$"))
 async def list_memes(event):
     if MEMES_DB:
         message = "**᯽︙ قائمة تخزين أوامر الميمز:**\n"
@@ -5778,7 +5624,7 @@ async def list_memes(event):
     
     await event.edit(message)
 
-# حذف بصمة محددة
+
 @client.on(events.NewMessage(pattern=r"^ازالة(?:\s|$)([\s\S]*)"))
 async def delete_meme(event):
     key = event.pattern_match.group(1)
@@ -5789,16 +5635,16 @@ async def delete_meme(event):
     else:
         await event.edit(f"**❌ لم يتم العثور على بصمة بهذا الاسم '{key}'**")
 
-# حذف جميع البصمات
-@client.on(events.NewMessage(pattern=r"^ازالة_البصمات$"))
+
+@client.on(events.NewMessage(pattern=r"^.ازالة_البصمات$"))
 async def delete_all_memes(event):
     MEMES_DB.clear()
     await event.edit("**᯽︙ تم حذف جميع بصمات الميمز من القائمة ✓**")
 
-# وظيفة لتحميل البصمة الصوتية من رابط تيليجرام
+
 async def download_telegram_audio(client, url):
     try:
-        # استخدام Telethon لتحميل الملف الصوتي
+
         message = await client.get_messages(url, limit=1)
         if message and message.media:
             file_path = await client.download_media(message.media, file="voice_note.ogg")
@@ -5809,14 +5655,13 @@ async def download_telegram_audio(client, url):
         print(f"خطأ في تحميل البصمة الصوتية: {e}")
         return None
 
-# دالة لإنشاء اسم مع رابط قابل للنقر
 def get_clickable_name(user):
     name = user.first_name
     if user.username:
         return f"[{name}](https://t.me/{user.username})"
     return f"[{name}](tg://user?id={user.id})"
 
-# أوامر النسبة (.نسبة و .نسبتنا)
+
 @client.on(events.NewMessage(pattern=r"\.(نسبة|نسبتنا) (.+)"))
 async def percentage(event):
     word = event.pattern_match.group(2)
@@ -5830,7 +5675,7 @@ async def percentage(event):
 
     await event.edit(f"**⎙ {word} لدى {target_name}: {percentage}%**", parse_mode="md")
 
-# أوامر الترفيه (.بوسة | .هينة)
+
 @client.on(events.NewMessage(pattern=r"\.(بوسة|هينة)"))
 async def kiss(event):
     actions = ["هاك بوسه", "بوسة خفيفة", "بوسة على الجبين", "بوسة مع حضن"]
@@ -5843,8 +5688,8 @@ async def kiss(event):
 
     await event.edit(f"{target_name}, {random.choice(actions)}", parse_mode="md")
 
-# أوامر رفع + أي كلمة
-user_titles = {}  # تخزين الألقاب
+
+user_titles = {}  
 
 @client.on(events.NewMessage(pattern=r"\رفع (.+)"))
 async def promote(event):
@@ -5867,19 +5712,47 @@ async def promote(event):
     user_titles[user_id].append(title)
     await event.edit(f"**⎙ تم رفع {user_name} إلى {title}**", parse_mode="md")
 
-# أمر الزواج (.زواج)
+OWNER_ID = 7915484613  # ضع هنا معرف المالك الحقيقي
+
+user_titles = {}  
+
+@client.on(events.NewMessage(pattern=r"\..رفع (.+)"))
+async def promote(event):
+    # التحقق من أن المرسل هو المالك فقط
+    if event.sender_id != OWNER_ID:
+        return await event.reply("**⎙ هذا الأمر مخصص للمالك فقط**", parse_mode="md")
+
+    title = event.pattern_match.group(1)
+
+    if event.is_reply:
+        user = await event.get_reply_message()
+        user_id = user.sender_id
+        user_name = get_clickable_name(user.sender)
+    else:
+        user_id = event.sender_id
+        user_name = get_clickable_name(event.sender)
+
+    if user_id not in user_titles:
+        user_titles[user_id] = []
+
+    if title in user_titles[user_id]:
+        return await event.reply(f"**⎙ هذا مرفوع {title} من اول**", parse_mode="md")
+
+    user_titles[user_id].append(title)
+    await event.reply(f"**⎙ تم رفع {user_name} إلى {title}**", parse_mode="md")
+
 @client.on(events.NewMessage(pattern=r"\.زواج"))
 async def marriage(event):
     responses = ["💍 ألف مبروك الزواج!", "تم الزواج رسميًا!", "الزواج مرفوض!", "أجمل ثنائي!"]
     await event.reply(random.choice(responses))
 
-# أمر المقارنة (.مقارنة)
+
 @client.on(events.NewMessage(pattern=r"\.مقارنة"))
 async def compare(event):
     percentage = random.randint(1, 100)
     await event.edit(f"**نسية المقارنه {percentage}% بينكما**")
 
-# أمر القتل (.اقتله)
+
 @client.on(events.NewMessage(pattern=r"\.اقتله"))
 async def kill(event):
     methods = ["تم الطعن حتى الموت", "انفجر في الهواء", "أُطلق عليه النار", "سقط من مبنى شاهق"]
@@ -5892,10 +5765,9 @@ async def kill(event):
 
     await event.edit(f"{target_name} {random.choice(methods)}", parse_mode="md")
 
-# أيدي الشخص الذي تريد الرد عليه
-target_user_id = 7915484613  # ضع هنا أيدي الشخص الذي تريد الرد عليه
+target_user_id = 7915484613  
 
-last_reply_times = {}  # تخزين آخر وقت رد لكل مستخدم
+last_reply_times = {}
 
 @client.on(events.NewMessage(incoming=True, func=lambda e: e.is_private))
 async def handler(event):
@@ -5903,12 +5775,12 @@ async def handler(event):
     sender_id = event.sender_id
     current_time = time.time()
 
-    # تحقق من أن المرسل هو الشخص الذي تم تحديد أيده
+
     if sender_id == target_user_id:
-        # الرد مرة كل ساعتين (7200 ثانية)
+        
         if sender_id not in last_reply_times or current_time - last_reply_times[sender_id] > 7200:
             await event.reply("هلا مطوري")
-            last_reply_times[sender_id] = current_time  # تحديث وقت آخر رد
+            last_reply_times[sender_id] = current_time
 
 plugin_category = "العروض"
 LOGS = logging.getLogger(__name__)
@@ -6000,9 +5872,9 @@ async def fetch_info(replied_user, event):
 
     return sts_animal_list[x], caption
 
-@client.on(events.NewMessage(pattern=r"^حيوان(?: |$)(.*)"))
+@client.on(events.NewMessage(pattern=r"^.حيوان(?: |$)(.*)"))
 async def who(event):
-    zed = await event.edit("⇆")  # تعديل أولي للرسالة
+    zed = await event.edit("⇆") 
     zel_dev = {7915484613}
     special_users = {7915484613}
 
@@ -6027,7 +5899,7 @@ async def who(event):
     message_id_to_reply = event.message.reply_to_msg_id or None
 
     try:
-        if ZEED_IMG:  # التحقق من وجود الصورة قبل الإرسال
+        if ZEED_IMG: 
             await event.client.send_file(
                 event.chat_id,
                 ZEED_IMG,
@@ -6062,7 +5934,7 @@ async def roll_dice(event, emoticon, max_value):
         try:
             required_number = int(input_str)
             while True:
-                # حذف الرسالة السابقة وإرسال أخرى حتى نصل للقيمة المطلوبة
+                
                 if r.media.value == required_number:
                     break
                 await r.delete()
@@ -6075,7 +5947,7 @@ async def roll_dice(event, emoticon, max_value):
         else:
             await event.reply(file=InputMediaDice(emoticon=emoticon))
 
-# تأكد من تعريف هذه المتغيرات في مكان آخر
+
 DART_E_MOJI = "🎯"
 DICE_E_MOJI = "🎲"
 BALL_E_MOJI = "🏀"
@@ -6115,7 +5987,7 @@ async def slot_game(event):
     emoticon = "🎰" if event.pattern_match.group(1) == ".حظ" else SLOT_E_MOJI
     await roll_dice(event, emoticon, 64)
 
-# دالة لإنشاء صورة imposter
+
 async def amongus_gen(text: str, clr: int) -> str:
     url = "https://github.com/JoKeRUB-AR/l313l-Resources/raw/master/Resources/Amongus/"
     font = ImageFont.truetype(
@@ -6147,8 +6019,8 @@ async def amongus_gen(text: str, clr: int) -> str:
     image.save(webp_file, "WebP")
     return webp_file
 
-# إضافة الأوامر لكتابة الدالة للعمل مع الأوامر الخاصة بـ client
-@client.on(events.NewMessage(pattern=r'من القاتل(|بريء) ([\s\S]*)'))
+
+@client.on(events.NewMessage(pattern=r'.من القاتل(|بريء) ([\s\S]*)'))
 async def imposter_handler(event):
     name = event.pattern_match.group(2)
     cmd = event.pattern_match.group(1).lower()
@@ -6162,8 +6034,8 @@ async def imposter_handler(event):
     else:
         await event.reply(f"**{name} لقـد كـان الـقاتل.**")
 
-# إضافة أمر للحصول على صورة Imposter
-@client.on(events.NewMessage(pattern=r'القاتل(|بريء) ([\s\S]*)'))
+
+@client.on(events.NewMessage(pattern=r'.القاتل(|بريء) ([\s\S]*)'))
 async def text_animation_handler(event):
     name = event.pattern_match.group(2)
     cmd = event.pattern_match.group(1).lower()
@@ -6178,7 +6050,7 @@ async def text_animation_handler(event):
     elif cmd == "بريء":
         await catevent.edit(f"{name} لـم يـكن الـقاتل.")
         
-# اشهر مزغرفة
+
 @client.on(events.NewMessage(pattern=r"^.اشهر مزغرفة$"))
 async def اشهر_مزغرفة(event):
     await event.edit(
@@ -6221,7 +6093,7 @@ async def اشهر_مزغرفة(event):
         "- 𝓢𝓪𝓽𝓾𝓻𝓭𝓪𝔂 ♕"
     )
 
-# اسماء عربية
+
 @client.on(events.NewMessage(pattern=r"^.اسماء عربية$"))
 async def اسماء_عربية(event):
     await event.edit(
@@ -6250,7 +6122,7 @@ async def اسماء_عربية(event):
         "- رنا ❣️"
     )
 
-# بنات1
+
 @client.on(events.NewMessage(pattern=r"^.بنات1$"))
 async def بنات1(event):
     await event.edit(
@@ -6267,7 +6139,7 @@ async def بنات1(event):
         "- 𝐹𝒶𝓇𝒶𝒽 🕊️"
     )
 
-# بنات2
+
 @client.on(events.NewMessage(pattern=r"^.بنات2$"))
 async def بنات2(event):
     await event.edit(
@@ -6283,7 +6155,7 @@ async def بنات2(event):
         "- 𓆩𝒮𝒾𝓁𝓋𝒶𓆪 🌸"
     )
 
-# شباب1
+
 @client.on(events.NewMessage(pattern=r"^.شباب1$"))
 async def شباب1(event):
     await event.edit(
@@ -6299,7 +6171,6 @@ async def شباب1(event):
         "- 𓆩𝑀𝑜𝓃𝒾𝓇𓆪 ✧"
     )
 
-# شباب2
 @client.on(events.NewMessage(pattern=r"^.شباب2$"))
 async def شباب2(event):
     await event.edit(
@@ -6320,7 +6191,6 @@ TEMP_DOWNLOAD_DIRECTORY = "./temp"
 if not os.path.isdir(TEMP_DOWNLOAD_DIRECTORY):
     os.makedirs(TEMP_DOWNLOAD_DIRECTORY)
 
-# دالة لتحويل الوسائط إلى صورة
 @client.on(events.NewMessage(pattern=".حول لصوره$"))
 async def to_photo(event):
     if not event.reply_to_msg_id:
@@ -6342,7 +6212,7 @@ async def to_photo(event):
     else:
         await event.edit("**⌔∮ فشل التحويل**")
 
-# دالة لتحويل الصور إلى ملصقات
+
 @client.on(events.NewMessage(pattern=".حول لملصق$"))
 async def to_sticker(event):
     if not event.reply_to_msg_id:
@@ -6401,7 +6271,7 @@ async def zed(event):
 import traceback
 plugin_category = "العروض"
 
-@client.on(events.NewMessage(pattern=r"^(سكرين|ss) (.+)$"))
+@client.on(events.NewMessage(pattern=r"^.(سكرين|ss) (.+)$"))
 async def take_screenshot(client, event):
     "دالة لأخذ لقطة شاشة لموقع معين"
     if Config.CHROME_BIN is None:
@@ -6453,7 +6323,7 @@ async def take_screenshot(client, event):
         await zzevent.edit(f"`{traceback.format_exc()}`")
 
 
-@client.on(events.NewMessage(pattern=r"^لقطه (.+)$"))
+@client.on(events.NewMessage(pattern=r"^.لقطه (.+)$"))
 async def screenshot_api(client, event):
     "دالة لأخذ لقطة شاشة عبر API"
     if Config.SCREEN_SHOT_LAYER_ACCESS_KEY is None:
@@ -6481,14 +6351,14 @@ async def screenshot_api(client, event):
     else:
         await zzevent.edit(f"`{response_api.text}`")
 
-@client.on(events.NewMessage(outgoing=True, pattern=r"^نسخ (.+)"))
+@client.on(events.NewMessage(outgoing=True, pattern=r"^.نسخ (.+)"))
 async def copy_channel_messages(event):
     try:
-        # استخراج يوزر القناة
+
         channel_username = event.pattern_match.group(1)
 
-        # جلب المنشورات من القناة وإرسالها إلى نفس المحادثة
-        async for post in client.iter_messages(channel_username, limit=50):  # ينسخ آخر 50 منشور فقط
+
+        async for post in client.iter_messages(channel_username, limit=50):  
             if post.text:
                 await event.respond(post.text)
             elif post.photo:
@@ -6501,6 +6371,192 @@ async def copy_channel_messages(event):
         await event.respond("**⎙ تم نسخ المنشورات بنجاح!**")
     except Exception as e:
         await event.respond(f"❌ **حدث خطأ:** `{str(e)}`")
+
+# التحقق من حالة المكالمة الصوتية
+async def is_audio_chat_active(chat_id):
+    try:
+        active_calls = await client(GetActiveCall(channel=chat_id))
+        return True if active_calls else False
+    except:
+        return False
+
+# تشغيل الصوت عند تنفيذ الأمر
+@client.on(events.NewMessage(outgoing=True, pattern=r'.شغل صوت'))
+async def AudioFileToVoiceChat(event):
+    if event.reply_to != None:
+        # التحقق إذا كانت المكالمة الصوتية قيد التشغيل
+        if await is_audio_chat_active(event.chat_id):
+            edit = await event.edit('**⎉╎المكالمة الصوتية قيد التشغيل بالفعل.**')
+            return
+        
+        try:
+            from telethon.tl.functions.channels import GetMessagesRequest
+            message_media = await event.client(GetMessagesRequest(channel=event.chat_id, id=[event.reply_to.reply_to_msg_id]))
+        except:
+            from telethon.tl.functions.messages import GetMessagesRequest
+            message_media = await event.client(GetMessagesRequest(id=[event.reply_to.reply_to_msg_id]))
+            
+        try:
+            if message_media.messages[0].media != None and str(message_media.messages[0].media.document.mime_type).startswith('audio'):
+                edit = await event.edit('**- جـارِ تشغيـل المقطـٓـع الصـٓـوتي ... 🎧♥️**')
+                filename = await event.client.download_media(message_media.messages[0], 'audio')
+                
+                edit = await event.edit("**- تم التشغيل .. بنجـاح 🎧♥️**")
+                try:
+                    stream = await JoinThenStreamAudio(f'{event.chat_id}', filename)
+                    edit = await event.edit('**⎉╎تم .. بنجـاح☑️**')
+                except Exception as error:
+                    print (error)
+                    edit = await event.edit('**⎉╎البث جاري, اذا لم يبدأ اوقف البث و حاول مرة اخرى**')
+            else:
+                edit = await event.edit('**⎉╎يجب الرد على صوتية**')
+                
+        except Exception as error:
+            edit = await event.edit('**⎉╎يجب الرد على صوتية**')
+    else:
+        edit = await event.edit('**⎉╎يجب الرد على صوتية**')
+
+
+# تشغيل الفيديو عند تنفيذ الأمر
+@client.on(events.NewMessage(outgoing=True, pattern=r'.شغل فيديو'))
+async def VideoFileToVoiceChat(event):
+    if event.reply_to != None:
+        # التحقق إذا كانت المكالمة الصوتية قيد التشغيل
+        if await is_audio_chat_active(event.chat_id):
+            edit = await event.edit('**⎉╎المكالمة الصوتية قيد التشغيل بالفعل.**')
+            return
+        
+        try:
+            from telethon.tl.functions.channels import GetMessagesRequest
+            message_media = await event.client(GetMessagesRequest(channel=event.chat_id, id=[event.reply_to.reply_to_msg_id]))
+        except:
+            from telethon.tl.functions.messages import GetMessagesRequest
+            message_media = await event.client(GetMessagesRequest(id=[event.reply_to.reply_to_msg_id]))
+            
+        try:
+            if message_media.messages[0].media != None and str(message_media.messages[0].media.document.mime_type).startswith('video'):
+                edit = await event.edit('**- جـارِ تشغيـل مقطـٓـع الفيـٓـديو ... 🎧♥️**')
+                filename = await event.client.download_media(message_media.messages[0], 'video')
+                
+                edit = await event.edit("**- تم التشغيل .. بنجـاح 🎧♥️\n\n- قناة السورس : @def_zoka**")
+                try:
+                    stream = await JoinThenStreamVideo(f'{event.chat_id}', filename)
+                    edit = await event.edit('**⎉╎تم .. بنجـاح☑️**')
+                except Exception as error:
+                    print (error)
+                    edit = await event.edit('**⎉╎البث جاري, اذا لم يبدأ اوقف البث و حاول مرة اخرى**')
+            else:
+                edit = await event.edit('**⎉╎يجب الرد على الفيديو**')
+                
+        except Exception as error:
+            edit = await event.edit('**⎉╎يجب الرد على الفيديو**')
+    else:
+        edit = await event.edit('**⎉╎يجب الرد على الفيديو**')
+        
+
+# التحقق إذا كانت المكالمة الصوتية قيد التشغيل
+async def is_audio_chat_active(chat_id):
+    try:
+        # تحقق من أن الدردشة الصوتية مفتوحة
+        chat_info = await client(GetChannelRequest(chat_id))
+        if chat_info.full_chat and chat_info.full_chat.broadcast:
+            return True
+        return False
+    except Exception as e:
+        print(f"Error checking audio chat: {e}")
+        return False
+
+# بدء مكالمة صوتية إذا لم تكن قيد التشغيل
+@client.on(events.NewMessage(outgoing=True, pattern=r'.ابدأ مكالمة'))
+async def start_audio_call(event):
+    if await is_audio_chat_active(event.chat_id):
+        edit = await event.edit("**⎉╎المكالمة الصوتية قيد التشغيل بالفعل.**")
+        return
+    
+    try:
+        # بدء المكالمة الصوتية (الانضمام إلى الدردشة الصوتية)
+        await client(JoinVoiceChat(channel=event.chat_id))
+        edit = await event.edit('**⎉╎تم فتح المكالمة الصوتية بنجاح.**')
+    except ChannelPrivateError:
+        edit = await event.edit("**⎉╎لا يمكن الانضمام إلى الدردشة الصوتية، ربما تكون خاصة.**")
+    except Exception as e:
+        edit = await event.edit(f"**⎉╎حدث خطأ: {e}**")
+
+update_tasks = {}
+time_formts = {
+    "1": "𝟏𝟐𝟑𝟒𝟓𝟔𝟕𝟖𝟗𝟎",
+    "2": "𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿𝟶",
+    "3": "𝟣𝟤𝟥𝟦𝟧𝟨𝟩𝟪𝟫𝟢",
+    "4": "𝟭𝟮𝟯𝟰𝟱𝟲𝟳𝟴𝟵𝟬",
+    "5": "𝟷𝟸𝟹𝟺𝟻𝟼𝟽𝟾𝟿𝟶",
+    "6": "۱۲۳۴۵۶۷۸۹۰",
+    "7": "١٢٣٤٥٦٧٨٩٠",
+    "8": "₁₂₃₄₅₆₇₈₉₀",
+    "9": "⓵⓶⓷⓸⓹⓺⓻⓼⓽⓪",
+    "10": "𝟙𝟚𝟛𝟜𝟝𝟞𝟟𝟠𝟡𝟘",
+    "11": "❶❷❸❹❺❻❼❽❾⓿"
+}
+
+current_time_format = "1"
+
+async def update_name_periodically(event, user_name, timezone_str): 
+    chat_id = event.chat_id
+    timezone = pytz.timezone(timezone_str)  
+    await event.delete() 
+    while True:
+        now = datetime.now(timezone)
+        formatted_time = now.strftime('%I:%M')
+        original_chars = "1234567890"
+        formatted_chars = time_formts[current_time_format]
+        for i in range(len(original_chars)):
+            formatted_time = formatted_time.replace(original_chars[i], formatted_chars[i])
+        try:
+            await event.client(UpdateProfileRequest(last_name=formatted_time)) 
+        except Exception as ex:
+            print(f"حدث خطأ: {str(ex)}")
+        await asyncio.sleep(55)
+        if chat_id in update_tasks and not update_tasks[chat_id]:
+            break
+
+@client.on(events.NewMessage(pattern=r"\.اسمي \| (.+)", outgoing=True))
+async def change_name_with_time(event):
+    timezone_str = event.pattern_match.group(1) 
+    chat_id = event.chat_id
+    update_tasks[chat_id] = True
+    me = await client.get_me()
+    user_name = me.first_name
+    asyncio.ensure_future(update_name_periodically(event, user_name, timezone_str))
+
+@client.on(events.NewMessage(pattern=r"\.ايقاف اسمي$", outgoing=True))
+async def stop_name_update(event):
+    chat_id = event.chat_id
+    if chat_id in update_tasks:
+        update_tasks[chat_id] = False
+        try:
+            await event.client(UpdateProfileRequest(last_name="")) 
+        except Exception as ex:
+            print(f"حدث خطأ: {str(ex)}")
+        await event.delete() 
+
+@client.on(events.NewMessage(pattern=r"\.الاشكال$", outgoing=True))
+async def show_time_formts(event):
+    formats_text = "\n".join([f"{key}: {value}" for key, value in time_formts.items()])
+    await event.respond(f"**قائمة أشكال الوقت:**\n\n{formats_text}")
+    await event.delete()
+
+@client.on(events.NewMessage(pattern=r"\.الشكل (\d+)", outgoing=True))
+async def change_time_format(event):
+    global current_time_format
+    try:
+        format_key = event.pattern_match.group(1)
+        if format_key in time_formts:
+            current_time_format = format_key
+            await event.respond(f"تم تغيير شكل الوقت إلى {format_key}")
+        else:
+            await event.respond("شكل الوقت غير موجود.")
+    except Exception as e:
+        print(f"حدث خطأ: {str(e)}")
+    await event.delete()
 
 @client.on(events.NewMessage(from_users='me', pattern='.الاوامر'))
 async def show_commands(event):
@@ -6538,11 +6594,11 @@ async def show_commands(event):
 @client.on(events.NewMessage(from_users='me', pattern='.م1'))
 async def show_m1_commands(event):
     m1_text = """
-<━━━[★] اوامر الخاص [★]━━━>
+<━━━[★] اوامر الخاص [★]━━━><
  • `.كتم`
-▪︎ يقوم بكتم الشخص في الخاص
+▪︎ يقوم بكتم الشخص -+ الخاص
 
- • `.سماح`
+ • `.الغاء الكتم`
 ▪︎ يقوم بي الغاء الكتم من الخاص 
 
  • `.المكتومين`
@@ -6557,8 +6613,8 @@ async def show_m1_commands(event):
  • `.حماية الخاص`
 ▪︎ يحمي الخاص من اي كلامات مسئه
 
- • `.تحذير`
-▪︎ يقوم بي عدد التحذيرات مثال تحذير + عدد التحذيرات 
+ • `.عدد التحذيرات`
+▪︎ يقوم بي تغيير عدد التحذيرات مثال .عدد التحذيرات + العدد 
 
  • `.قبول` 
 ▪︎ يقوم برد على الشخص بل خاص ولا يقوم بإعطائه تحذيرات
@@ -6575,8 +6631,14 @@ async def show_m1_commands(event):
  • `.مسح المحظورين`
 ▪︎ يقوم بمسح المحظورين الذين تم حظرهم بسبب التكرار في الخاص
  
- • `. مسح التحذيرات`
+ • `.مسح التحذيرات`
 ▪︎ يقوم بمسح جميع تحذيرات للشخص برد عليه
+
+ • `.قفل الخاص`
+▪︎ يقوم بي مسح اي رساله تتم ارسلها في الخاص 
+
+ • `.فتح الخاص`
+▪︎ يقوم بفتح الخاص ولا يتم حذف اي رساله 
 """
     await event.edit(m1_text)
 
@@ -6584,15 +6646,17 @@ async def show_m1_commands(event):
 async def show_m2_commands(event):
     m2_text = """
 <━━━[★] اوامر الردود [★]━━━>
- • ـ`.add (الكلمة المفتاحية) الرد`
- • مثال لاضافه الرد الخاص مع الصوره
+ • `.تشغيل الرد`
+▪︎ يقوم بتشغيل الرد التلقائي في الخاص
 
- • `.الكلمة المفتاحية`
+ • `.تعطيل الرد`
+▪︎ يقوم بتعطيل الرد التلقائي في الخاص
 
- • `.الردود`
+ • `.كليشة الرد`
+▪︎ قم برد على الرسالة الي تريدها رد تلقائي 
 
- • `.رد (النص)`
- • مثال لتعين الرد التلقائي للخاص
+ • `.المخصص الرد تشغيل`
+▪︎ يقوم بتفعيل الردود الي ضقتها في امر كليشة الرد
 """
     await event.edit(m2_text)
 
@@ -6628,11 +6692,17 @@ async def show_m3_commands(event):
 async def show_m4_commands(event):
     m4_text = """
 <━━━[★] اوامر الحساب [★]━━━>
- • `.تفعيل الاسم الوقتي` 
-▪︎ يقوم بتفعيل وقت يم اسمك
+ • `.اسمي ` 
+▪︎ يقوم بتفعيل وقت يم اسمك مثال .اسمي Yemen/Aden
 
- • `.تعطيل الاسم الوقتي`
+ • `.ايقاف اسمي`
 ▪︎ يقوم بتعطيل وقت يم اسمك
+
+ • `.الاشكال`
+▪︎ يعرض قائمة ارقام لاسم الوقتي
+
+ • `.الشكل`
+▪︎ عند كتابه امر الاشكال حدد مثال الشكل + الرقم 
 
  • `.عداد (عدد الدقائق)`
 ▪︎ يقوم بإنشاء عداد تنازلي
@@ -6645,6 +6715,9 @@ async def show_m4_commands(event):
 
  • `.مسح (عدد الرسائل)`
 ▪︎ يقوم بمسح رسائلك 
+
+ • `.مسح رسائلي`
+▪︎ يقوم بمسح جميع رسائلك في المكان الي كتبت فيه `.مسح رسائلي`
 
  • `الاشكال`
 ▪︎ يقوم بعرض اشكال الوقتي
@@ -6760,7 +6833,7 @@ async def show_m9_commands(event):
 async def show_m10_commands(event):
     m10_text = """
 <━━━[★] اوامر الخطوط [★]━━━>
-⎙ `خط غامق`   ⎙ `خط مشطوب`
+⎙ `خط الغامق`   ⎙ `خط مشطوب`
 
 ⎙ `خط رمز`   ⎙ `خط بايثون`
 
@@ -6844,7 +6917,7 @@ async def show_m15_commands(event):
 async def show_m16_commands(event):
     m16_text = """
 <━━━[★] اوامر أخرى [★]━━━>
- • `.تاريخه`
+ • `.تاريخه` او `تاريخة`
 ▪︎ يظهر لك تاريخ أنشأء الحساب
 
  • `.ايميل وهمي`
@@ -6863,7 +6936,7 @@ async def show_m16_commands(event):
 ▪︎ يقوم بتعطيل امر التكبر 
 
  • `.اختصار
-▪︎ يستخدم بالرد على اي رسالة يقوم بوضع اختصار للجملة التي رددت عليها بالامر .
+▪︎ يستخدم بالرد على اي رسالة يقوم بوضع اختصار للجملة التي رددت عليها بالامر مثال اختصار + 1 برد على الرسالة.
 
  •︎ `.الاختصارات`
 ▪︎ يعرض لك الاختصارات المضافه 
@@ -7057,7 +7130,7 @@ async def show_m25_commands(event):
  • `.حالة الصيد`
 ⪼ لـ معرفـة حالـة تقـدم عمليـة الصيـد
 
- • `.صيد ايقاف`
+ • `.ايقاف صيد`
 ⪼ لـ إيقـاف عمليـة الصيـد الجاريـه
 
  • `.نوع`
@@ -7091,7 +7164,7 @@ async def fake_hack(client, event):
         
         event = await event.edit("يتـم الاختـراق ..")
 
-        me = await client.get_me()  # ✅ إصلاح الخطأ هنا
+        me = await client.get_me()  
         animation_chars = [
             "᯽︙ تـم الربـط بسـيرفرات الـتهكير الخـاصة",
             "تـم تحـديد الضحـية",
@@ -7112,7 +7185,6 @@ async def fake_hack(client, event):
     else:
         await event.edit("᯽︙ لم يتـم التعـرف على المستـخدم")
 
-# تسجيل الأمر مع الكلاينت
 @client.on(events.NewMessage(pattern=".تهكير$"))
 async def _(event):
     await fake_hack(client, event)
@@ -7140,16 +7212,16 @@ async def fake_hack2(client, event):
         await asyncio.sleep(animation_interval)
         await event.edit(animation_chars[i])
 
-    # ✅ جلب اسم المهاجم
+    
     me = await client.get_me()
     attacker_name = me.first_name
 
-    # ✅ إضافة اسم المهاجم في النهاية
+
     final_message = f"**تم رفع معلومات الضحية...**\n\n**المخترق:** {attacker_name}\nسيتم ربط المعلومات بسيرفرات التهكير الخاصة.."
     await asyncio.sleep(2)
     await event.edit(final_message)
 
-# تسجيل الأمر مع الكلاينت
+
 @client.on(events.NewMessage(pattern=".اختراق$"))
 async def _(event):
     await fake_hack2(client, event)
@@ -7305,7 +7377,7 @@ async def send_welcome_message(event):
 """
     await event.reply(welcome_message)
 
-@client.on(events.NewMessage(from_users='me', pattern='.حب'))
+@client.on(events.NewMessage(from_users='me', pattern='.بوسه'))
 async def send_welcome_message(event):
     await event.delete()
     welcome_message = """
@@ -7346,11 +7418,11 @@ _████"""
 async def send_welcome_message(event):
     await event.delete()
     welcome_message = """
-المطور @X_54P
+المطور @e_v_ae
 
-قناه السورس @S21S6
+قناه السورس @S21Si
 
-مجموعة الدعم @e_u0e
+مجموعة الدعم @eeccc0
 """
     await event.reply(welcome_message)
 
@@ -7748,10 +7820,41 @@ async def delete_muted_user_messages(event):
         await client.delete_messages(event.chat_id, [event.id])
     
 
+ascii_art = """
+\033[031m
+─────▄████▀█▄
+───▄█████████████████▄
+─▄█████.▼.▼.▼.▼.▼.▼▼▼▼
+███████    
+████████▄▄▲.▲▲▲▲▲▲▲
+████████████████████▀▀⠀
+\033[0m
+ Eva source is up and running
+"""
+os.system("clear")  # استخدم "cls" إذا كنت على Windows
+print(ascii_art)
+
+# دالة لتحديث اليوزر (كمثال)
+async def update_username():
+    me = await client.get_me()
+    print(f"Installed {me.first_name}, Eva source")
+
+# تشغيل الكلاينت
 async def main():
     await client.start()
     await update_username()
 
 with client:
     client.loop.run_until_complete(main())
+# ... باقي الكود كما هو
+
+async def main():
+    await client.start()
+    await update_username()
+    print("تم تشغيل...")
+    await asyncio.Event().wait()  # يبقي السكربت شغال إلى الأبد
+
+with client:
+    client.loop.run_until_complete(main())    
+    
     
